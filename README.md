@@ -26,4 +26,3 @@ lists, etc., in the user-interface include tooltips describing their functionali
 you will not have any problems. Of course, there may be some things that need further explaining and to that end I have    
 posted the following video on YouTube, where I demonstrate the basic usage and some of the addon features.  
 
-https://www.youtube.com/watch?v=d1PYp8W-UaE&list=PLPcBV4WfR2IWAZLCZSZ-iG3y1Xz2OdaWe
