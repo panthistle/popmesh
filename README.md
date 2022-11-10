@@ -1,1 +1,3 @@
-# popmesh
+# Pop Mesh
+
+### About
