@@ -18,3 +18,11 @@ To install the addon in Blender:
 - In the 'Add-ons' tab, click 'Install...', navigate to the 'PTDBLNPOPM.zip' file, select it and click 'Install Add-on'
 - Enable the addon
 
+
+### Help
+
+I believe the best way to find out what an addon can do for you is to experiment with it. All the command buttons, selection  
+lists, etc., in the user-interface include tooltips describing their functionality. If you are comfortable using Blender,  
+you will not have any problems. Of course, there may be some things that need further explaining and to that end I have    
+posted the following video on YouTube, where I demonstrate the basic usage and some of the addon features.
+
