@@ -1,8 +1,8 @@
 ### About
 
 'Pop Mesh' is the first of three 'path-on-path' addons for Blender I wrote over the past few months. They all share  
-the same core script though there are differences in their implementation as they deal with different object types.  
-These addons have been tested with Blender 2.93 LTS.
+the same core script though there are siginificant differences in their implementation as they deal with different  
+object types. All three addons have been tested with Blender 2.93 LTS.
 
 
 ### Download and Installation
