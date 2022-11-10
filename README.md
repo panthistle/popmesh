@@ -7,7 +7,13 @@ These addons have been tested with Blender 2.93 LTS.
 
 ### Download and Installation
 
-- Download the .zip archive to your hard drive 
+To download 'Pop Mesh':  
+- Click on the green 'Code' button above and select the 'Download ZIP' option.
+- Save the file to your hard drive.
+
+To install the addon in Blender:
+
+- Extract the .zip archive to your hard drive 
 - In Blender, open the Preferences window from the Edit menu
 - In the Add-ons tab, click Install... and select the downloaded .zip file
 - Enable the add-on
