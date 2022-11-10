@@ -9,8 +9,7 @@ tasks and object types. All three addons have been tested with Blender 2.93 LTS.
 
 To download 'Pop Mesh':  
 - Click on the green 'Code' button above and select the 'Download ZIP' option
-- Save the 'popmesh-main.zip' file to your hard drive
-
+- Save the 'popmesh-main.zip' file to your hard drive  
 
 To install the addon in Blender:
 - Extract the 'popmesh-main.zip' archive
