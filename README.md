@@ -13,7 +13,7 @@ To install the addon in Blender:
 - Extract the 'popmesh-main.zip' archive
 - There will be three files inside the extracted folder: 'LICENSE', 'PTDBLNPOPM.zip' and 'README.md'
 - In Blender, open the 'Preferences...' window from the 'Edit' menu
-- In the 'Add-ons' tab, click 'Install...', navigate to the 'PTDBLNPOPM.zip' file, select it and click 'Install Add-on'
+- In 'Add-ons' tab, click 'Install...', navigate to the 'PTDBLNPOPM.zip' file, select it and click 'Install Add-on'
 - Enable the addon
 
 
