@@ -1,9 +1,9 @@
 ### About
 
-'Pop Mesh' is a mesh generator addon for Blender. It has been tested on Blender 2.93 LTS.
+Mesh generator addon for Blender. Tested on Blender 2.93 LTS.
 
 
-### Download and Installation
+### Download and Install
 
 To download 'Pop Mesh':  
 - Click on the green 'Code' button above and select the 'Download ZIP' option
@@ -19,8 +19,9 @@ To install the addon in Blender:
 
 ### Help
 
-I believe the best way to find out what the addon can do for you is to experiment with it. All the command buttons,  
+The best way to find out what the addon can do for you is to experiment with it. All the command buttons,  
 selection lists, etc., in the user-interface include tooltips describing their functionality. If you are comfortable  
-using Blender, you will not have any problems. Of course, there may be some things that need further explaining and  
-to that end I have posted the following video on YouTube, where I demonstrate basic usage and some of the features.  
+using Blender, you should not have any problems. Of course, there may be some things that need further  
+explaining and to that end I have posted the following video on YouTube, where I demonstrate basic usage  
+and some of the features.  
 
