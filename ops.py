@@ -1180,23 +1180,32 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
     bl_description = "track settings"
     bl_options = {"REGISTER", "INTERNAL", "UNDO"}
 
+    def track_strip_update(self, context):
+        if self.update_pause:
+            return None
+        fval = (self.sa_end - self.sa_beg) * self.s_sca * self.s_rep
+        self.s_end = self.s_beg + int(fval)
+        if not self.s_blendauto:
+            v = self.s_blendin
+            self.s_blendin = v
+
     def track_sa_beg_get(self):
         return self.get("sa_beg", 1)
 
     def track_sa_beg_set(self, value):
-        self["sa_beg"] = min(max(self.ac_beg, value), self.ac_end - 1)
+        val = min(max(self.ac_beg, value), self.ac_end - 1)
+        if not self.update_pause and val >= self.sa_end:
+            val = self.sa_end - 1
+        self["sa_beg"] = val
 
     def track_sa_end_get(self):
         return self.get("sa_end", 1)
 
     def track_sa_end_set(self, value):
-        self["sa_end"] = min(max(self.sa_beg + 1, value), self.ac_end)
-
-    def track_s_end_get(self):
-        return self.get("s_end", 1)
-
-    def track_s_end_set(self, value):
-        self["s_end"] = max(self.s_beg + 1, value)
+        val = min(max(self.ac_beg + 1, value), self.ac_end)
+        if not self.update_pause and val <= self.sa_beg:
+            val = self.sa_beg + 1
+        self["sa_end"] = val
 
     def track_s_blin_get(self):
         return self.get("s_blendin", 0)
@@ -1204,6 +1213,10 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
     def track_s_blin_set(self, value):
         frms = self.s_end - self.s_beg
         self["s_blendin"] = min(max(0, value), frms)
+
+    def track_s_blin_update(self, context):
+        v = self.s_blendout
+        self.s_blendout = v
 
     def track_s_blout_get(self):
         return self.get("s_blendout", 0)
@@ -1217,6 +1230,8 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
             self.s_blendin = 0
             self.s_blendout = 0
 
+    update_pause: bpy.props.BoolProperty(default=True)
+    blv2: bpy.props.BoolProperty(default=False)
     ac_beg: bpy.props.IntProperty(default=1)
     ac_end: bpy.props.IntProperty(default=1)
     sa_beg: bpy.props.IntProperty(
@@ -1225,6 +1240,7 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
         default=1,
         get=track_sa_beg_get,
         set=track_sa_beg_set,
+        update=track_strip_update,
     )
     sa_end: bpy.props.IntProperty(
         name="Last",
@@ -1232,23 +1248,31 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
         default=1,
         get=track_sa_end_get,
         set=track_sa_end_set,
+        update=track_strip_update,
     )
     s_beg: bpy.props.IntProperty(
-        name="First", description="strip first frame", default=1, min=1
+        name="Start Frame",
+        description="strip first frame",
+        default=1,
+        min=1,
+        update=track_strip_update,
     )
-    s_end: bpy.props.IntProperty(
-        name="Last",
-        description="strip last frame",
-        default=10,
-        get=track_s_end_get,
-        set=track_s_end_set,
+    s_end: bpy.props.IntProperty(default=2)
+    s_sca: bpy.props.FloatProperty(
+        name="Scale",
+        description="scaling factor for action",
+        default=1,
+        min=0.001,
+        max=100,
+        update=track_strip_update,
     )
     s_rep: bpy.props.FloatProperty(
         name="Repeat",
         description="number of times to repeat action range",
         default=1,
-        min=0.1,
-        max=10,
+        min=1,
+        max=100,
+        update=track_strip_update,
     )
     s_bln: bpy.props.EnumProperty(
         name="Blend Type",
@@ -1268,6 +1292,7 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
         default=0,
         get=track_s_blin_get,
         set=track_s_blin_set,
+        update=track_s_blin_update,
     )
     s_blendout: bpy.props.IntProperty(
         name="Blend-Out",
@@ -1297,13 +1322,13 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
     )
 
     def copy_from_pg(self, item):
-        d = self.as_keywords()
+        d = self.as_keywords(ignore=("update_pause", "blv2"))
         for key in d.keys():
             d[key] = getattr(item, key)
             setattr(self, key, d[key])
 
     def copy_to_pg(self, item):
-        d = self.as_keywords(ignore=("ac_beg", "ac_end"))
+        d = self.as_keywords(ignore=("update_pause", "blv2", "ac_beg", "ac_end"))
         for key in d.keys():
             d[key] = getattr(self, key)
             setattr(item, key, d[key])
@@ -1311,7 +1336,13 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
     def invoke(self, context, event):
         pool = context.scene.ptdblnpopm_pool
         item = pool.trax[pool.trax_idx]
+        tup = bpy.app.version
+        if tup:
+            self.blv2 = tup < (3, 0, 0)
+        self.update_pause = True
         self.copy_from_pg(item)
+        self.update_pause = False
+        self.track_strip_update(context)
         return self.execute(context)
 
     def execute(self, context):
@@ -1323,7 +1354,10 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
             ob = pool.pop_mesh
             ref = ob.data if item.owner == "mesh" else ob
             strip = ref.animation_data.nla_tracks[item.t_name].strips[0]
-            strip.repeat = self.s_rep
+            if self.blv2:
+                strip.repeat = self.s_rep
+            else:
+                strip.scale = self.s_sca
             strip.action_frame_start = self.sa_beg
             strip.action_frame_end = self.sa_end
             strip.frame_start = self.s_beg
@@ -1334,7 +1368,6 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
             strip.blend_out = self.s_blendout
             strip.extrapolation = self.s_xpl
             strip.use_reverse = self.s_bak
-            item.s_sca = strip.scale
         except Exception as my_err:
             pool.callbacks = True
             print(f"track_edit: {my_err.args}")
@@ -1350,12 +1383,12 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
         s = c.split(factor=0.3)
         col = s.column(align=True)
         names = [
-            "Action",
-            "Strip",
+            "Action Range",
+            "Start Frame",
+            "Scale/Repeat",
             "Blend Type",
             "Blend In/Out",
             "Extrapolate",
-            "Repeats",
             "Playback",
         ]
         for n in names:
@@ -1367,7 +1400,9 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
         row.prop(self, "sa_end", text="")
         row = col.row(align=True)
         row.prop(self, "s_beg", text="")
-        row.prop(self, "s_end", text="")
+        row = col.row(align=True)
+        row.prop(self, "s_sca", text="")
+        row.prop(self, "s_rep", text="")
         row = col.row(align=True)
         row.prop(self, "s_bln", text="")
         row.prop(self, "s_blendauto", toggle=True)
@@ -1377,8 +1412,6 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
         row.prop(self, "s_blendout", text="")
         row = col.row(align=True)
         row.prop(self, "s_xpl", text="")
-        row = col.row(align=True)
-        row.prop(self, "s_rep", text="")
         row = col.row(align=True)
         row.prop(self, "s_bak", toggle=True)
 
@@ -1472,7 +1505,11 @@ class PTDBLNPOPM_OT_track_copy(bpy.types.Operator):
         pool = context.scene.ptdblnpopm_pool
         pool.callbacks = False
         ob = pool.pop_mesh
+        blv2 = False
         try:
+            tup = bpy.app.version
+            if tup:
+                blv2 = tup < (3, 0, 0)
             target = pool.trax[pool.trax_idx]
             actest = bpy.data.actions.get(target.t_name)
             if not actest:
@@ -1491,7 +1528,10 @@ class PTDBLNPOPM_OT_track_copy(bpy.types.Operator):
             track.mute = not source.active
             start = int(action.frame_range[0])
             strip = track.strips.new(name, start, action)
-            strip.repeat = source.s_rep
+            if blv2:
+                strip.repeat = source.s_rep
+            else:
+                strip.scale = source.s_sca
             strip.action_frame_start = source.sa_beg
             strip.action_frame_end = source.sa_end
             strip.frame_start = source.s_beg
