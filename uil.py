@@ -907,7 +907,7 @@ class PTDBLNPOPM_PT_ui_animode(PTDBLNPOPM_PT_ui, bpy.types.Panel):
             s = row.split(factor=0.6)
             sc = s.column(align=True)
             row = sc.row(align=True)
-            row.label(text="Action Frames:")
+            row.label(text="Action Range:")
             row = sc.row(align=True)
             row.label(text="Strip Frames:")
             row = sc.row(align=True)
