@@ -193,7 +193,7 @@ class PopEx:
         self._endcaps = dct["endcaps"]
         self._pathlocs = self._path.get_locs()
         self._pathrots = [Quaternion()] * self._path.npts
-        self._spinrots = []
+        self._spinrots = [Quaternion()] * self._path.npts
         self._spinaxis = Vector((0, 0, 1))
         self._spinang = 0
         self._follow_limit = True
@@ -351,12 +351,8 @@ class PopEx:
         sp_r = self._spinrots
         pr_l = self._proflocs
         locs = []
-        if sp_r:
-            for pal, prl, par, spr in zip(pa_l, pr_l, pa_r, sp_r):
-                locs += [par @ spr @ p + pal for p in prl]
-        else:
-            for pal, prl, par in zip(pa_l, pr_l, pa_r):
-                locs += [par @ p + pal for p in prl]
+        for pal, prl, par, spr in zip(pa_l, pr_l, pa_r, sp_r):
+            locs += [par @ spr @ p + pal for p in prl]
         return locs
 
     def get_faces(self):
