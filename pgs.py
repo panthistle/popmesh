@@ -942,11 +942,11 @@ class PTDBLNPOPM_track(bpy.types.PropertyGroup):
     t_name: bpy.props.StringProperty(default="name")
     active: bpy.props.BoolProperty(default=True)
     ac_beg: bpy.props.IntProperty(default=1)
-    ac_end: bpy.props.IntProperty(default=1)
+    ac_end: bpy.props.IntProperty(default=2)
     sa_beg: bpy.props.IntProperty(default=1)
-    sa_end: bpy.props.IntProperty(default=1)
+    sa_end: bpy.props.IntProperty(default=2)
     s_beg: bpy.props.IntProperty(default=1)
-    s_end: bpy.props.IntProperty(default=1)
+    s_end: bpy.props.IntProperty(default=2)
     s_sca: bpy.props.FloatProperty(default=1)
     s_rep: bpy.props.FloatProperty(default=1)
     s_bak: bpy.props.BoolProperty(default=False)
@@ -1145,7 +1145,7 @@ class PTDBLNPOPM_pool(bpy.types.PropertyGroup):
     ani_kf_start: bpy.props.IntProperty(
         name="Start",
         default=1,
-        min=0,
+        min=1,
         description="first keyframe number",
         options={"HIDDEN"},
     )
