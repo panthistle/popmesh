@@ -83,7 +83,7 @@ class PTDBLNPOPM_OT_pop_reset(bpy.types.Operator):
 
     bl_label = "Discard changes"
     bl_idname = "ptdblnpopm.pop_reset"
-    bl_description = "new mesh - use default settings"
+    bl_description = "load mesh - use default settings"
     bl_options = {"REGISTER", "INTERNAL", "UNDO"}
 
     newdef: bpy.props.BoolProperty(default=False, options={"HIDDEN"})
@@ -92,8 +92,8 @@ class PTDBLNPOPM_OT_pop_reset(bpy.types.Operator):
     def description(cls, context, properties):
         nd = getattr(properties, "newdef")
         if nd:
-            return "new mesh - use default settings"
-        return "new mesh - use current settings"
+            return "load mesh - use default settings"
+        return "load mesh - use current settings"
 
     def invoke(self, context, event):
         pool = context.scene.ptdblnpopm_pool
@@ -1017,7 +1017,7 @@ class PTDBLNPOPM_OT_read_setts(bpy.types.Operator, ImportHelper):
 
     bl_label = "Load Preset"
     bl_idname = "ptdblnpopm.read_setts"
-    bl_description = "new mesh - load settings from .json file"
+    bl_description = "load mesh - use settings from .json file"
     bl_options = {"REGISTER", "INTERNAL", "UNDO"}
 
     filter_glob: bpy.props.StringProperty(default="*.json;*.txt", options={"HIDDEN"})
@@ -1583,9 +1583,9 @@ class PTDBLNPOPM_OT_ani_action(bpy.types.Operator):
                 self.report({"INFO"}, "no animation values")
                 return {"CANCELLED"}
             path = pool.path
-            path_d = self.path_edit_dict(path, loop)
+            pa_d = self.path_edit_dict(path, loop)
             prof = pool.prof
-            prof_d = self.prof_edit_dict(prof, loop)
+            pr_d = self.prof_edit_dict(prof, loop)
             spro = pool.spro
             if spro.ani_rot.active:
                 spro_angs = self.spro_anglist(spro.ani_rot, loop)
@@ -1597,7 +1597,7 @@ class PTDBLNPOPM_OT_ani_action(bpy.types.Operator):
                 if item.active:
                     pathloc_d["dcts"].append(item.to_dct())
                     pathloc_d["ids"].append(
-                        self.coll_index_list(item.ani_idx, item.params.idx, loop)
+                        self.index_offset_list(item.ani_idx, item.params.idx, loop)
                     )
                     pathloc_d["ams"].append(self.poploc_fac_list(item, loop))
             blnd_d = {"dcts": [], "ids": [], "ams": []}
@@ -1605,7 +1605,7 @@ class PTDBLNPOPM_OT_ani_action(bpy.types.Operator):
                 if item.active:
                     blnd_d["dcts"].append(item.to_dct())
                     blnd_d["ids"].append(
-                        self.coll_index_list(item.ani_idx, item.params.idx, loop)
+                        self.index_offset_list(item.ani_idx, item.params.idx, loop)
                     )
                     blnd_d["ams"].append(self.blnd_fac_list(item, loop))
             profloc_d = {"dcts": [], "ids": [], "ams": [], "pids": []}
@@ -1613,10 +1613,10 @@ class PTDBLNPOPM_OT_ani_action(bpy.types.Operator):
                 if item.active:
                     profloc_d["dcts"].append(item.to_dct())
                     profloc_d["ids"].append(
-                        self.coll_index_list(item.ani_idx, item.params.idx, loop)
+                        self.index_offset_list(item.ani_idx, item.params.idx, loop)
                     )
                     profloc_d["pids"].append(
-                        self.coll_index_list(item.ani_itm_idx, item.gprams.idx, loop)
+                        self.index_offset_list(item.ani_itm_idx, item.gprams.idx, loop)
                     )
                     profloc_d["ams"].append(self.poploc_fac_list(item, loop))
             noiz = pool.noiz
@@ -1647,12 +1647,12 @@ class PTDBLNPOPM_OT_ani_action(bpy.types.Operator):
             nlocs = path.pathed.rings * prof.profed.rpts
             kloc = []
             for i in range(loop):
-                if path_d["ret"]:
-                    pop.update_path(path_d["dim"][i], path_d["fac"][i])
+                if pa_d["ret"]:
+                    pop.update_path(pa_d["idx"][i], pa_d["dim"][i], pa_d["fac"][i])
                 else:
                     pop.reset_pathlocs()
-                if prof_d["ret"]:
-                    pop.update_profile(prof_d["dim"][i], prof_d["fac"][i])
+                if pr_d["ret"]:
+                    pop.update_profile(pr_d["dim"][i], pr_d["fac"][i])
                 else:
                     pop.reset_proflocs()
                 for dct, ids, ams in zip(
@@ -1730,7 +1730,7 @@ class PTDBLNPOPM_OT_ani_action(bpy.types.Operator):
 
     def act_loc_state(self, pool):
         path = pool.path
-        if path.ani_dim:
+        if path.ani_idx.active or path.ani_dim:
             return True
         if path.provider in ["spiral", "line", "ellipse"] and path.ani_fac:
             return True
@@ -1790,7 +1790,7 @@ class PTDBLNPOPM_OT_ani_action(bpy.types.Operator):
                     ct = 0
         return ids
 
-    def coll_index_list(self, inst, idx, loop):
+    def index_offset_list(self, inst, idx, loop):
         return self.index_list(inst.active, idx, inst.offset, inst.beg, inst.stp, loop)
 
     def linear_list(self, dt, m, cnt):
@@ -1818,11 +1818,14 @@ class PTDBLNPOPM_OT_ani_action(bpy.types.Operator):
 
     def path_edit_dict(self, path, loop):
         d = {"ret": False}
+        aidx = path.ani_idx.active
         adim = path.ani_dim
         afac = path.ani_fac
-        if not (adim or afac):
+        if not (aidx or adim or afac):
             return d
         d["ret"] = True
+        path_idx = self.index_offset_list(path.ani_idx, path.pathed.idx, loop)
+        d["idx"] = path_idx
         mirr = path.ani_mirror
         cycl = path.ani_cycles
         path_fac = [0] * loop
