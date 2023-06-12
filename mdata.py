@@ -415,7 +415,7 @@ class PopEx:
         self._pathstore = [loc.copy() for loc in self._pathlocs]
         self._profstore = [[loc.copy() for loc in pl] for pl in self._proflocs]
 
-    def update_path(self, dim, fac):
+    def update_path(self, idx, dim, fac):
         if self._path.name == "line":
             self._path.exp = fac
         elif self._path.name == "spiral":
@@ -424,6 +424,7 @@ class PopEx:
             dim = [dim[0], dim[2]]
             if self._path.name == "ellipse":
                 self._path.fac = fac
+        self._path.offset = idx % self._path.npts
         self._path.dim = dim
         self._pathlocs = self._path.get_locs()
 
