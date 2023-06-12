@@ -1,6 +1,6 @@
 ### About
 
-Mesh generator addon for Blender. Tested on Blender 2.93 LTS and 3.3 LTS.
+Mesh generator addon for Blender. Tested on Blender 2.93 LTS and 3.3 LTS.  
 Latest update: 12-June-2023
 
 
