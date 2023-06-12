@@ -1,6 +1,7 @@
 ### About
 
 Mesh generator addon for Blender. Tested on Blender 2.93 LTS and 3.3 LTS.
+Latest update: 12-June-2023
 
 
 ### Download and Install
@@ -22,8 +23,4 @@ The best way to find out what the addon can do for you is to experiment with it.
 selection lists, etc., in the user-interface include tooltips describing their function. If you are comfortable  
 using Blender, you should not have any problems. 
 
-
-### Updates
-
-Latest update: 12-June-2023
 
