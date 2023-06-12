@@ -507,6 +507,7 @@ class PTDBLNPOPM_path(bpy.types.PropertyGroup):
         type=bpy.types.Object, poll=path_user_check, update=path_user_update
     )
     pathed: bpy.props.PointerProperty(type=PTDBLNPOPM_pathed)
+    ani_idx: bpy.props.PointerProperty(type=PTDBLNPOPM_anim_index)
     ani_dim: bpy.props.BoolProperty(
         name="Size", description="animate dimensions", default=False, options={"HIDDEN"}
     )
