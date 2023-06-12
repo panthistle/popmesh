@@ -226,9 +226,9 @@ class PTDBLNPOPM_PT_ui_setup(PTDBLNPOPM_PT_ui, bpy.types.Panel):
         row = col.row(align=True)
         rc = row.column(align=True)
         rc.enabled = edpans_ok
-        rc.operator("ptdblnpopm.pop_reset", text="New Mesh").newdef = False
+        rc.operator("ptdblnpopm.pop_reset", text="Load Current").newdef = False
         rc = row.column(align=True)
-        rc.operator("ptdblnpopm.pop_reset", text="New Default").newdef = True
+        rc.operator("ptdblnpopm.pop_reset", text="Load Default").newdef = True
         row = col.row(align=True)
         rc = row.column(align=True)
         rc.operator("ptdblnpopm.read_setts")
@@ -348,6 +348,7 @@ class PTDBLNPOPM_PT_ui_path_edit(PTDBLNPOPM_PT_ui, bpy.types.Panel):
         c = bcol.column(align=True)
         c.enabled = path_edit
         c.label(text="Animation Options")
+        anim_ind_tmpl(c, path.ani_idx, "Index")
         if path.provider == "spiral":
             dprop = "ani_spi_dim"
             fprop = "ani_spi_revs"
