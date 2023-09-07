@@ -21,6 +21,6 @@ To install the addon in Blender:
 
 The best way to find out what the addon can do for you is to experiment with it. All the command buttons,  
 selection lists, etc., in the user-interface include tooltips describing their function. If you are comfortable  
-using Blender, you should not have any problems. To get started, watch the [Introduction Video](https://www.youtube.com/watch?v=5YuJ9eQYwVE&list=PLI6-DUeYXpnPay3ZTRnAbZdNwhrAn2p_R&index=1)
+using Blender, you should not have any problems. To get started, watch the [Introduction Video](https://www.youtube.com/watch?v=5YuJ9eQYwVE)
 
 
