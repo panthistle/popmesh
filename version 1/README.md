@@ -14,3 +14,11 @@ To install the addon in Blender:
 - Extract the 'popmesh-main.zip' archive to a local folder
 - In Blender, open the 'Preferences...' window from the 'Edit' menu
 - In 'Add-ons' tab, click 'Install...', navigate to the folder where you extracted the .zip archive, select the 'PTDBLNPOPM.zip' file and click 'Install Add-on'
+- Enable the addon
+
+
+### Usage
+
+The best way to find out what the addon can do for you is to experiment with it. All the command buttons,  
+selection lists, etc., in the user-interface include tooltips describing their function. If you are comfortable  
+using Blender, you should not have any problems. To get started, watch the [Introduction Video](https://www.youtube.com/watch?v=5YuJ9eQYwVE)
