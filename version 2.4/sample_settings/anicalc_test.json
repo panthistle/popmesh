@@ -1,0 +1,448 @@
+{
+  "path": {
+    "provider": "arc",
+    "res_lin": 12,
+    "res_wav": 12,
+    "res_arc": 12,
+    "res_ell": 12,
+    "res_pol": 12,
+    "res_hel": 24,
+    "res_spi": 24,
+    "pathed": {
+      "npts": 12,
+      "user_dim": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "user_piv": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "upv": [],
+      "cust_dim": [
+        8.0,
+        8.0,
+        8.0
+      ],
+      "lin_dim": 8.0,
+      "lin_ease": "IN-OUT",
+      "lin_exp": 1.0,
+      "wav_dim": 8.0,
+      "wav_amp": 0.5,
+      "wav_frq": 1.0,
+      "wav_pha": 0.0,
+      "arc_dim": 8.0,
+      "arc_fac": 4.0,
+      "ell_dim": [
+        8.0,
+        8.0
+      ],
+      "ellstep": 1,
+      "ellstep_val": 0.0,
+      "ellstep_exp": 2.0,
+      "pol_dim": [
+        8.0,
+        8.0
+      ],
+      "pol_sid": 3,
+      "pol_coff": 0.0,
+      "pol_cres": 0,
+      "pol_ang": 0.0,
+      "pol_ease": "IN-OUT",
+      "pol_exp": 1.0,
+      "hel_dim": [
+        8.0,
+        8.0
+      ],
+      "hel_len": 8.0,
+      "hel_stp": 2.0,
+      "hel_fac": 1.0,
+      "hel_pha": 0.0,
+      "hel_invert": false,
+      "hel_hlrp": false,
+      "hel_exp": 2.0,
+      "hel_mir": false,
+      "hel_ease": "IN-OUT",
+      "spi_dim": 8.0,
+      "spi_revs": 1.0,
+      "idx": 0,
+      "upfixed": true,
+      "upaxis": "X",
+      "closed": false,
+      "endcaps": false
+    },
+    "ani_dim": false,
+    "ani_dim_mirror": {
+      "active": false,
+      "cycles": 1
+    },
+    "ani_lin_dim": 8.0,
+    "ani_wav_dim": 8.0,
+    "ani_arc_dim": 8.0,
+    "ani_spi_dim": 8.0,
+    "ani_dim_2d": [
+      8.0,
+      8.0
+    ],
+    "ani_dim_3d": [
+      8.0,
+      8.0,
+      8.0
+    ],
+    "ani_fac": true,
+    "ani_fac_mirror": {
+      "active": true,
+      "cycles": 1
+    },
+    "ani_fac2": false,
+    "ani_fac2_mirror": {
+      "active": false,
+      "cycles": 1
+    },
+    "ani_fac3": false,
+    "ani_fac3_mirror": {
+      "active": false,
+      "cycles": 1
+    },
+    "ani_fac4": false,
+    "ani_fac4_mirror": {
+      "active": false,
+      "cycles": 1
+    },
+    "ani_lin_exp": 1.0,
+    "ani_wav_amp": 0.5,
+    "ani_wav_frq": 1.0,
+    "ani_wav_pha": 0.0,
+    "ani_arc_fac": -4.0,
+    "ani_ellstep_val": 0.0,
+    "ani_hel_len": 8.0,
+    "ani_hel_fac": 1.0,
+    "ani_hel_stp": 2.0,
+    "ani_hel_pha": 0.0,
+    "ani_spi_revs": 1.0
+  },
+  "pathrot": {
+    "active": false,
+    "axis": [
+      0.0,
+      0.0,
+      1.0
+    ],
+    "angle": 0.0,
+    "ani_rot": {
+      "active": false,
+      "fac": 0.0,
+      "beg": 1,
+      "end": 1
+    }
+  },
+  "blnd": [],
+  "prof": {
+    "provider": "ellipse",
+    "res_lin": 12,
+    "res_wav": 12,
+    "res_arc": 12,
+    "res_ell": 12,
+    "res_pol": 12,
+    "profed": {
+      "npts": 12,
+      "user_dim": [
+        0.0,
+        0.0
+      ],
+      "user_piv": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "upv": [],
+      "cust_dim": [
+        2.0,
+        2.0
+      ],
+      "lin_dim": 2.0,
+      "lin_ease": "IN-OUT",
+      "lin_exp": 1.0,
+      "wav_dim": 2.0,
+      "wav_amp": 0.5,
+      "wav_frq": 1.0,
+      "wav_pha": 0.0,
+      "arc_dim": 2.0,
+      "arc_fac": 1.0,
+      "ell_dim": [
+        0.699999988079071,
+        0.699999988079071
+      ],
+      "ellstep": 1,
+      "ellstep_val": 0.0,
+      "ellstep_exp": 2.0,
+      "pol_dim": [
+        2.0,
+        2.0
+      ],
+      "pol_sid": 3,
+      "pol_coff": 0.0,
+      "pol_cres": 0,
+      "pol_ang": 0.0,
+      "pol_ease": "IN-OUT",
+      "pol_exp": 1.0,
+      "idx": 0,
+      "rot_align": 0.0,
+      "closed": true,
+      "reverse": false
+    },
+    "ani_dim": false,
+    "ani_dim_mirror": {
+      "active": false,
+      "cycles": 1
+    },
+    "ani_lin_dim": 2.0,
+    "ani_wav_dim": 2.0,
+    "ani_arc_dim": 2.0,
+    "ani_epc_dim": [
+      2.0,
+      2.0
+    ],
+    "ani_fac": false,
+    "ani_fac_mirror": {
+      "active": false,
+      "cycles": 1
+    },
+    "ani_fac2": false,
+    "ani_fac2_mirror": {
+      "active": false,
+      "cycles": 1
+    },
+    "ani_fac3": false,
+    "ani_fac3_mirror": {
+      "active": false,
+      "cycles": 1
+    },
+    "ani_lin_exp": 1.0,
+    "ani_wav_amp": 0.5,
+    "ani_wav_frq": 1.0,
+    "ani_wav_pha": 0.0,
+    "ani_arc_fac": 1.0,
+    "ani_ellstep_val": 0.0
+  },
+  "profrot": {
+    "active": false,
+    "roll": 0.0,
+    "twist": 0.0,
+    "follow_limit": true,
+    "ani_rot": {
+      "active": false,
+      "fac": 0.0,
+      "beg": 1,
+      "end": 1
+    }
+  },
+  "noiz": {
+    "active": false,
+    "ampli": 0.0,
+    "vfac": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "nseed": 0,
+    "ani_noiz": false,
+    "ani_seed": false,
+    "ani_blin": 1,
+    "ani_blout": 1,
+    "ani_stp": 1
+  },
+  "meshrot": {
+    "active": false,
+    "axis": [
+      0.0,
+      0.0,
+      1.0
+    ],
+    "angle": 0.0,
+    "pivot": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "ani_rot": {
+      "active": false,
+      "fac": 0.0,
+      "beg": 1,
+      "end": 1
+    }
+  },
+  "pathloc": [
+    {
+      "name": "Locs",
+      "active": true,
+      "fac": 1.0,
+      "axis": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "abs_move": true,
+      "nprams": {
+        "npts": 12,
+        "ease": "IN-OUT",
+        "exp": 2.0,
+        "cyc": false,
+        "mir": true,
+        "rev": false,
+        "reflect": "0",
+        "idx": 0,
+        "itm": 12,
+        "gap": 0,
+        "reps": 1,
+        "repfstp": 1,
+        "repfoff": 1.0
+      },
+      "ani_nidx": {
+        "active": true,
+        "offrnd": true,
+        "offrndseed": 3,
+        "offset": 12,
+        "beg": 1,
+        "stp": 1
+      },
+      "ani_fac": {
+        "active": true,
+        "fac": -1.0,
+        "mirror": {
+          "active": true,
+          "cycles": 2
+        }
+      }
+    },
+    {
+      "name": "Locs",
+      "active": true,
+      "fac": -1.5,
+      "axis": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "abs_move": true,
+      "nprams": {
+        "npts": 12,
+        "ease": "IN-OUT",
+        "exp": 2.0,
+        "cyc": false,
+        "mir": true,
+        "rev": false,
+        "reflect": "0",
+        "idx": 0,
+        "itm": 12,
+        "gap": 0,
+        "reps": 1,
+        "repfstp": 1,
+        "repfoff": 1.0
+      },
+      "ani_nidx": {
+        "active": true,
+        "offrnd": false,
+        "offrndseed": 0,
+        "offset": 3,
+        "beg": 5,
+        "stp": 3
+      },
+      "ani_fac": {
+        "active": true,
+        "fac": 1.5,
+        "mirror": {
+          "active": true,
+          "cycles": 4
+        }
+      }
+    }
+  ],
+  "profloc": [
+    {
+      "name": "Locs",
+      "active": true,
+      "fac": 0.6000000238418579,
+      "axis": [
+        1.0,
+        1.0,
+        0.0
+      ],
+      "abs_move": false,
+      "nprams": {
+        "npts": 12,
+        "ease": "IN-OUT",
+        "exp": 2.0,
+        "cyc": false,
+        "mir": true,
+        "rev": false,
+        "reflect": "0",
+        "idx": 0,
+        "itm": 12,
+        "gap": 0,
+        "reps": 1,
+        "repfstp": 1,
+        "repfoff": 1.0
+      },
+      "iprams": {
+        "npts": 12,
+        "ease": "IN-OUT",
+        "exp": 2.0,
+        "cyc": true,
+        "mir": true,
+        "rev": false,
+        "reflect": "0",
+        "idx": 0,
+        "itm": 12,
+        "gap": 0,
+        "reps": 1,
+        "repfstp": 1,
+        "repfoff": 1.0
+      },
+      "ani_nidx": {
+        "active": true,
+        "offrnd": false,
+        "offrndseed": 4,
+        "offset": 1,
+        "beg": 5,
+        "stp": 1
+      },
+      "ani_fac": {
+        "active": true,
+        "fac": -0.11999999731779099,
+        "mirror": {
+          "active": true,
+          "cycles": 4
+        }
+      },
+      "ani_idx": {
+        "active": true,
+        "offrnd": true,
+        "offrndseed": 0,
+        "offset": 12,
+        "beg": 1,
+        "stp": 1
+      }
+    }
+  ],
+  "rngs": {
+    "active": false,
+    "invert": false,
+    "rndsel": false,
+    "rbeg": 0,
+    "ritm": 1,
+    "rgap": 0,
+    "rstp": 1,
+    "pbeg": 0,
+    "pitm": 1,
+    "pgap": 0,
+    "pstp": 1,
+    "nseed": 0
+  },
+  "ani_kf_type": "1",
+  "ani_kf_start": 1,
+  "ani_kf_step": 10,
+  "ani_kf_loop": 17
+}
