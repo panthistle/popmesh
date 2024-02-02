@@ -8,7 +8,7 @@ Latest update: 02-February-2024
 
 To download the add-on:  
 - Click on the 'addon' directory above to open it
-- Click on 'PTDBLNPOPM.zip' and then select 'Download raw file' and save the zip to your hard drive  
+- Click on 'PTDBLNPOPM.zip', then select 'Download raw file' and save the zip to your hard drive  
 
 To install the add-on in Blender:
 - Start Blender and open the 'Preferences' window from the 'Edit' menu.  Select the 'Add-ons' tab.
