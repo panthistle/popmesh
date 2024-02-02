@@ -19,7 +19,6 @@ To install the add-on in Blender:
 
 ### Usage
 
-The [User Guide](https://panthistle.github.io/pdfs/PopMeshGuide.pdf) provides detailed information about the  
-program with illustrated examples.
+The [User Guide](https://panthistle.github.io/pdfs/PopMeshGuide.pdf) provides detailed information about the program with illustrated examples.
    
 
