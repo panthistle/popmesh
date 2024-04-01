@@ -19,5 +19,5 @@ To install the add-on in Blender:
 
 ### Usage
 
-The [User Guide](https://panthistle.github.io/pdfs/PMUG25.pdf) provides detailed information about the program with illustrated examples.
+The [User Guide](https://panthistle.github.io/pdfs/PMUG24.pdf) provides detailed information about the program with illustrated examples.
    
