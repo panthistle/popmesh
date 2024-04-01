@@ -30,7 +30,7 @@ bl_info = {
     "version": (2, 5, 0),
     "blender": (3, 6, 0),
     "location": "View3D > UI",
-    "doc_url": "https://panthistle.github.io/pdfs/PMUG24.pdf",
+    "doc_url": "https://panthistle.github.io/pdfs/PMUG25.pdf",
     "category": "Mesh",
 }
 
