@@ -917,7 +917,7 @@ class PTDBLNPOPM_PT_ui_anicalc(PTDBLNPOPM_PT_ui, bpy.types.Panel):
             row = col.row(align=True)
             row.prop(clc, "loop", text="")
         row = col.row(align=True)
-        row.label(text=clc.info)
+        row.prop(clc, "info", text="")
 
 
 class PTDBLNPOPM_PT_ui_animode(PTDBLNPOPM_PT_ui, bpy.types.Panel):
