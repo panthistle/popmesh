@@ -25,12 +25,16 @@
 
 import bpy
 
-from . import mpopm as ModPOP
+from . import mpopm as ModPOPM
+from . import mpdop as ModPDOP
 
 
 # ------------------------------------------------------------------------------
 #
-# ----------------------------- PROPERTIES -------------------------------------
+# -------------------------------- BMPGS ---------------------------------------
+
+
+# ---- BMPGS PROPERTIES
 
 
 class PTDBLNPOPM_vec3(bpy.types.PropertyGroup):
@@ -173,7 +177,7 @@ class PTDBLNPOPM_params(bpy.types.PropertyGroup):
     exp: bpy.props.FloatProperty(
         name="exponent",
         description="interpolation exponent",
-        default=1,
+        default=2,
         min=0.2,
         max=5,
     )
@@ -249,13 +253,8 @@ class PTDBLNPOPM_params(bpy.types.PropertyGroup):
 
 
 class PTDBLNPOPM_pathloc(bpy.types.PropertyGroup):
-    def pathloc_active_update(self, context):
-        if not self.active:
-            self.ani_nidx.active = False
-            self.ani_fac.active = False
-
     name: bpy.props.StringProperty(default="Location")
-    active: bpy.props.BoolProperty(default=False, update=pathloc_active_update)
+    active: bpy.props.BoolProperty(default=False)
     fac: bpy.props.FloatProperty(default=0)
     axis: bpy.props.FloatVectorProperty(size=3, default=(1, 1, 1))
     abs_move: bpy.props.BoolProperty(default=False)
@@ -274,8 +273,6 @@ class PTDBLNPOPM_pathloc(bpy.types.PropertyGroup):
 
 class PTDBLNPOPM_pathrot(bpy.types.PropertyGroup):
     def pathrot_active_update(self, context):
-        if not self.active:
-            self.ani_rot.active = False
         pool = context.scene.ptdblnpopm_pool
         if pool.update_ok:
             bpy.ops.ptdblnpopm.pop_simple_update()
@@ -299,14 +296,8 @@ class PTDBLNPOPM_pathrot(bpy.types.PropertyGroup):
 
 
 class PTDBLNPOPM_profloc(bpy.types.PropertyGroup):
-    def profloc_update(self, context):
-        if not self.active:
-            self.ani_nidx.active = False
-            self.ani_fac.active = False
-            self.ani_idx.active = False
-
     name: bpy.props.StringProperty(default="Location")
-    active: bpy.props.BoolProperty(default=False, update=profloc_update)
+    active: bpy.props.BoolProperty(default=False)
     fac: bpy.props.FloatProperty(default=0)
     axis: bpy.props.FloatVectorProperty(size=3, default=(1, 1, 0))
     abs_move: bpy.props.BoolProperty(default=False)
@@ -328,8 +319,6 @@ class PTDBLNPOPM_profloc(bpy.types.PropertyGroup):
 
 class PTDBLNPOPM_profrot(bpy.types.PropertyGroup):
     def profrot_active_update(self, context):
-        if not self.active:
-            self.ani_rot.active = False
         pool = context.scene.ptdblnpopm_pool
         if pool.update_ok:
             bpy.ops.ptdblnpopm.pop_simple_update()
@@ -423,7 +412,7 @@ class PTDBLNPOPM_pathed(bpy.types.PropertyGroup):
     lin_exp: bpy.props.FloatProperty(
         name="exponent",
         description="interpolation exponent",
-        default=1,
+        default=2,
         min=0.2,
         max=5,
     )
@@ -509,7 +498,7 @@ class PTDBLNPOPM_pathed(bpy.types.PropertyGroup):
     pol_exp: bpy.props.FloatProperty(
         name="exponent",
         description="interpolation exponent",
-        default=1,
+        default=2,
         min=0.2,
         max=5,
     )
@@ -785,7 +774,7 @@ class PTDBLNPOPM_path(bpy.types.PropertyGroup):
     ani_lin_exp: bpy.props.FloatProperty(
         name="target",
         description="exponent",
-        default=1,
+        default=2,
         min=0.2,
         max=5,
         options={"HIDDEN"},
@@ -923,7 +912,7 @@ class PTDBLNPOPM_profed(bpy.types.PropertyGroup):
     lin_exp: bpy.props.FloatProperty(
         name="exponent",
         description="interpolation exponent",
-        default=1,
+        default=2,
         min=0.2,
         max=5,
     )
@@ -1009,7 +998,7 @@ class PTDBLNPOPM_profed(bpy.types.PropertyGroup):
     pol_exp: bpy.props.FloatProperty(
         name="exponent",
         description="interpolation exponent",
-        default=1,
+        default=2,
         min=0.2,
         max=5,
     )
@@ -1189,7 +1178,7 @@ class PTDBLNPOPM_prof(bpy.types.PropertyGroup):
     ani_lin_exp: bpy.props.FloatProperty(
         name="target",
         description="exponent",
-        default=1,
+        default=2,
         min=0.2,
         max=5,
         options={"HIDDEN"},
@@ -1250,12 +1239,6 @@ class PTDBLNPOPM_blnd(bpy.types.PropertyGroup):
         if pool.update_ok:
             bpy.ops.ptdblnpopm.setup_blnd_provider()
 
-    def blnd_active_update(self, context):
-        if not self.active:
-            self.ani_nidx.active = False
-            self.ani_fac = False
-            self.ani_idx.active = False
-
     name: bpy.props.StringProperty(default="Blend")
     provider: bpy.props.EnumProperty(
         name="blend profile",
@@ -1272,7 +1255,7 @@ class PTDBLNPOPM_blnd(bpy.types.PropertyGroup):
         poll=blnd_user_ob_check,
         update=blnd_user_ob_update,
     )
-    active: bpy.props.BoolProperty(default=False, update=blnd_active_update)
+    active: bpy.props.BoolProperty(default=False)
     blnded: bpy.props.PointerProperty(type=PTDBLNPOPM_profed)
     fac: bpy.props.FloatProperty(default=0)
     nprams: bpy.props.PointerProperty(type=PTDBLNPOPM_params)
@@ -1296,9 +1279,7 @@ class PTDBLNPOPM_blnd(bpy.types.PropertyGroup):
         return self.ani_nidx.active or self.ani_fac or self.ani_idx.active
 
     def to_dct(self):
-        d = dict.fromkeys(("provider", "fac"))
-        for key in d.keys():
-            d[key] = getattr(self, key)
+        d = {"provider": self.provider, "fac": self.fac}
         xvs = set() if self.provider == "custom" else {"upv"}
         d.update(self.blnded.to_dct(exclude=xvs))
         d["nprams"] = self.nprams.to_dct()
@@ -1308,8 +1289,6 @@ class PTDBLNPOPM_blnd(bpy.types.PropertyGroup):
 
 class PTDBLNPOPM_noiz(bpy.types.PropertyGroup):
     def noiz_active_update(self, context):
-        if not self.active:
-            self.ani_noiz = False
         pool = context.scene.ptdblnpopm_pool
         if pool.update_ok:
             bpy.ops.ptdblnpopm.pop_simple_update()
@@ -1365,7 +1344,6 @@ class PTDBLNPOPM_noiz(bpy.types.PropertyGroup):
 
 
 class PTDBLNPOPM_track(bpy.types.PropertyGroup):
-
     name: bpy.props.StringProperty(default="Track")
     t_name: bpy.props.StringProperty(default="name")
     active: bpy.props.BoolProperty(default=True)
@@ -1394,19 +1372,12 @@ class PTDBLNPOPM_track(bpy.types.PropertyGroup):
 
 
 class PTDBLNPOPM_rngs(bpy.types.PropertyGroup):
-
     def rngs_common_update(self, context):
         pool = context.scene.ptdblnpopm_pool
         if pool.update_ok:
             bpy.ops.ptdblnpopm.pop_simple_update()
 
-    active: bpy.props.BoolProperty(
-        name="active",
-        description="active range faces",
-        default=False,
-        update=rngs_common_update,
-        options={"HIDDEN"},
-    )
+    active: bpy.props.BoolProperty(default=False)
     invert: bpy.props.BoolProperty(
         name="invert",
         description="invert selections",
@@ -1502,8 +1473,6 @@ class PTDBLNPOPM_rngs(bpy.types.PropertyGroup):
 
 class PTDBLNPOPM_meshrot(bpy.types.PropertyGroup):
     def meshrot_active_update(self, context):
-        if not self.active:
-            self.ani_rot.active = False
         pool = context.scene.ptdblnpopm_pool
         if pool.update_ok:
             bpy.ops.ptdblnpopm.pop_simple_update()
@@ -1597,7 +1566,6 @@ class PTDBLNPOPM_pool(bpy.types.PropertyGroup):
     trax_idx: bpy.props.IntProperty(name="Track", default=-1, options={"HIDDEN"})
     pop_mesh: bpy.props.PointerProperty(type=bpy.types.Object)
     anicalc: bpy.props.PointerProperty(type=PTDBLNPOPM_anicalc)
-
     update_ok: bpy.props.BoolProperty(default=True)
     replace_mesh: bpy.props.BoolProperty(
         name="replace mesh",
@@ -1697,27 +1665,27 @@ class PTDBLNPOPM_pool(bpy.types.PropertyGroup):
         options={"HIDDEN"},
     )
 
-    def pop_anim_state(self):
-        if self.meshrot.anim_state():
+    def pop_anim_state_eval(self):
+        if self.meshrot.active and self.meshrot.anim_state():
             return True
-        if self.noiz.anim_state():
+        if self.noiz.active and self.noiz.anim_state():
             return True
-        if self.pathrot.anim_state():
+        if self.pathrot.active and self.pathrot.anim_state():
             return True
-        if self.profrot.anim_state():
+        if self.profrot.active and self.profrot.anim_state():
             return True
         if self.path.anim_state():
             return True
         if self.prof.anim_state():
             return True
         for item in self.pathloc:
-            if item.anim_state():
+            if item.active and item.anim_state():
                 return True
         for item in self.profloc:
-            if item.anim_state():
+            if item.active and item.anim_state():
                 return True
         for item in self.blnd:
-            if item.anim_state():
+            if item.active and item.anim_state():
                 return True
         return False
 
@@ -1746,187 +1714,7 @@ class PTDBLNPOPM_pool(bpy.types.PropertyGroup):
             self.property_unset(key)
 
 
-# ------------------------------------------------------------------------------
-#
-# ----------------------------- OPERATORS --------------------------------------
-
-
-# ---- PATH/PROFILE/BLEND DRAW-FUNCTIONS
-
-
-def draw_line(cns, cvs, pgob, isprof=False):
-    names = ("Length", "Lerp")
-    for n in names:
-        row = cns.row()
-        row.label(text=n)
-    row = cvs.row(align=True)
-    row.prop(pgob, "lin_dim", text="")
-    row = cvs.row(align=True)
-    rc = row.column(align=True)
-    rc.prop(pgob, "lin_ease", text="")
-    rc = row.column(align=True)
-    rc.enabled = pgob.lin_ease != "LINEAR"
-    rc.prop(pgob, "lin_exp", text="")
-
-
-def draw_wave(cns, cvs, pgob, isprof=False):
-    names = ("Length", "Amplitude", "Factor")
-    for n in names:
-        row = cns.row()
-        row.label(text=n)
-    row = cvs.row(align=True)
-    row.prop(pgob, "wav_dim", text="")
-    row = cvs.row(align=True)
-    row.prop(pgob, "wav_amp", text="")
-    row = cvs.row(align=True)
-    row.prop(pgob, "wav_frq", text="")
-    row.prop(pgob, "wav_pha", text="")
-
-
-def draw_arc(cns, cvs, pgob, isprof=False):
-    names = ("Chord", "Factor", "Offset")
-    for n in names:
-        row = cns.row()
-        row.label(text=n)
-    row = cvs.row(align=True)
-    row.prop(pgob, "arc_dim", text="")
-    row = cvs.row(align=True)
-    row.prop(pgob, "arc_fac", text="")
-    row = cvs.row(align=True)
-    row.prop(pgob, "arc_off", text="")
-
-
-def draw_ellipse(cns, cvs, pgob, isprof=False):
-    names = ("Size", "", "Steps")
-    for n in names:
-        row = cns.row()
-        row.label(text=n)
-    row = cvs.row(align=True)
-    row.prop(pgob, "ell_dim", index=0, text="")
-    row = cvs.row(align=True)
-    row.prop(pgob, "ell_dim", index=1, text="")
-    row = cvs.row(align=True)
-    row.prop(pgob, "ellstep", text="")
-    row.prop(pgob, "ellstep_val", text="")
-    row.prop(pgob, "ellstep_exp", text="")
-
-
-def draw_polygon(cns, cvs, pgob, isprof=False):
-    names = ("Size", "", "Sides", "Corner", "Lerp")
-    for n in names:
-        row = cns.row()
-        row.label(text=n)
-    row = cvs.row(align=True)
-    row.prop(pgob, "pol_dim", index=0, text="")
-    row = cvs.row(align=True)
-    row.prop(pgob, "pol_dim", index=1, text="")
-    row = cvs.row(align=True)
-    row.prop(pgob, "pol_sid", text="")
-    row.prop(pgob, "pol_ang", text="")
-    row = cvs.row(align=True)
-    rc = row.column(align=True)
-    rc.prop(pgob, "pol_coff", text="")
-    rc = row.column(align=True)
-    rc.enabled = pgob.pol_coff > 0.001
-    rc.prop(pgob, "pol_cres", text="")
-    row = cvs.row(align=True)
-    rc = row.column(align=True)
-    rc.prop(pgob, "pol_ease", text="")
-    rc = row.column(align=True)
-    rc.enabled = pgob.pol_ease != "LINEAR"
-    rc.prop(pgob, "pol_exp", text="")
-
-
-def draw_helix(cns, cvs, pgob):
-    names = ("Width", "", "Factor", "Length", "Factor", "Lerp")
-    for n in names:
-        row = cns.row()
-        row.label(text=n)
-    row = cvs.row(align=True)
-    row.prop(pgob, "hel_dim", index=0, text="")
-    row = cvs.row(align=True)
-    row.prop(pgob, "hel_dim", index=1, text="")
-    row = cvs.row(align=True)
-    col = row.column(align=True)
-    col.prop(pgob, "hel_fac", text="")
-    col = row.column(align=True)
-    col.enabled = pgob.hel_fac != 1.0
-    col.prop(pgob, "hel_mir", text="mirror", toggle=True)
-    col = row.column(align=True)
-    col.enabled = (pgob.hel_fac != 1.0) and not bool(pgob.hel_mir)
-    col.prop(pgob, "hel_invert", toggle=True)
-    row = cvs.row(align=True)
-    col = row.column(align=True)
-    col.prop(pgob, "hel_len", text="")
-    col = row.column(align=True)
-    col.enabled = pgob.hel_ease != "LINEAR"
-    col.prop(pgob, "hel_hlrp", text="Ease", toggle=True)
-    row = cvs.row(align=True)
-    col = row.column(align=True)
-    col.prop(pgob, "hel_stp", text="")
-    col = row.column(align=True)
-    col.prop(pgob, "hel_pha", text="")
-    row = cvs.row(align=True)
-    rc = row.column(align=True)
-    rc.prop(pgob, "hel_ease", text="")
-    rc = row.column(align=True)
-    rc.enabled = pgob.hel_ease != "LINEAR"
-    rc.prop(pgob, "hel_exp", text="")
-
-
-def draw_spiral(cns, cvs, pgob):
-    names = ("Diameter", "Revs")
-    for n in names:
-        row = cns.row()
-        row.label(text=n)
-    row = cvs.row(align=True)
-    row.prop(pgob, "spi_dim", text="")
-    row = cvs.row(align=True)
-    row.prop(pgob, "spi_revs", text="")
-
-
-def draw_custom(cns, cvs, pgob, isprof=False):
-    if isprof:
-        names = ("Size", "", "Pivot")
-    else:
-        names = ("Size", "", "", "Pivot")
-    for n in names:
-        row = cns.row()
-        row.label(text=n)
-    pud = tuple(1 if i else 0 for i in pgob.user_dim)
-    row = cvs.row(align=True)
-    row.enabled = pud[0]
-    row.prop(pgob, "cust_dim", index=0, text="")
-    row = cvs.row(align=True)
-    row.enabled = pud[1]
-    row.prop(pgob, "cust_dim", index=1, text="")
-    if not isprof:
-        row = cvs.row(align=True)
-        row.enabled = pud[2]
-        row.prop(pgob, "cust_dim", index=2, text="")
-    row = cvs.row(align=True)
-    col = row.column(align=True)
-    col.prop(pgob, "user_piv", index=0, text="")
-    col = row.column(align=True)
-    col.prop(pgob, "user_piv", index=1, text="")
-    if not isprof:
-        col = row.column(align=True)
-        col.prop(pgob, "user_piv", index=2, text="")
-
-
-ppbdraw = {
-    "line": draw_line,
-    "wave": draw_wave,
-    "arc": draw_arc,
-    "ellipse": draw_ellipse,
-    "polygon": draw_polygon,
-    "helix": draw_helix,
-    "spiral": draw_spiral,
-    "custom": draw_custom,
-}
-
-
-# ---- PATH EDITOR
+# ---- BMPGS OPERATORS
 
 
 class PTDBLNPOPM_OT_path_edit(bpy.types.Operator):
@@ -1957,7 +1745,7 @@ class PTDBLNPOPM_OT_path_edit(bpy.types.Operator):
         for key in d.keys():
             setattr(path.pathed, key, d[key])
         try:
-            ModPOP.scene_update(scene)
+            ModPOPM.scene_update(scene)
         except Exception as my_err:
             pool.update_ok = True
             print(f"path_edit: {my_err.args}")
@@ -1973,10 +1761,7 @@ class PTDBLNPOPM_OT_path_edit(bpy.types.Operator):
         s = row.split(factor=0.25)
         cns = s.column(align=True)
         cvs = s.column(align=True)
-        ppbdraw[self.provider](cns, cvs, self.pathed)
-
-
-# --- PROFILE EDITOR
+        getattr(ModPDOP, self.provider)(cns, cvs, self.pathed)
 
 
 class PTDBLNPOPM_OT_prof_edit(bpy.types.Operator):
@@ -2005,7 +1790,7 @@ class PTDBLNPOPM_OT_prof_edit(bpy.types.Operator):
         for key in d.keys():
             setattr(prof.profed, key, d[key])
         try:
-            ModPOP.scene_update(scene)
+            ModPOPM.scene_update(scene)
         except Exception as my_err:
             pool.update_ok = True
             print(f"prof_edit: {my_err.args}")
@@ -2021,54 +1806,7 @@ class PTDBLNPOPM_OT_prof_edit(bpy.types.Operator):
         s = row.split(factor=0.25)
         cns = s.column(align=True)
         cvs = s.column(align=True)
-        ppbdraw[self.provider](cns, cvs, self.profed, isprof=True)
-
-
-# ---- BLEND/PATHLOC/PROFLOC COLLECTION PARAMS DRAW-FUNCTION
-
-
-def params_layout_draw(box, pgob, names):
-    row = box.row(align=True)
-    s = row.split(factor=0.25)
-    sc = s.column(align=True)
-    for n in names:
-        row = sc.row()
-        row.label(text=n)
-    row = sc.row()
-    row.label(text="Lerp")
-    row = sc.row()
-    row.label(text="Style")
-    sc = s.column(align=True)
-    row = sc.row(align=True)
-    row.prop(pgob, "idx", text="")
-    row.prop(pgob, "itm", text="")
-    row.prop(pgob, "gap", text="")
-    row = sc.row(align=True)
-    row.prop(pgob, "reps", text="")
-    row.prop(pgob, "repfoff", text="")
-    row.prop(pgob, "repfstp", text="")
-    col = sc.column(align=True)
-    row = col.row(align=True)
-    rc = row.column(align=True)
-    rc.prop(pgob, "ease", text="")
-    rc = row.column(align=True)
-    rc.enabled = pgob.ease not in {"OFF", "LINEAR"}
-    rc.prop(pgob, "exp", text="")
-    rc = row.column(align=True)
-    rc.enabled = pgob.ease != "OFF"
-    rc.prop(pgob, "cyc", toggle=True)
-    row = col.row(align=True)
-    rc = row.column(align=True)
-    rc.enabled = pgob.ease != "OFF"
-    rc.prop(pgob, "mir", toggle=True)
-    rc = row.column(align=True)
-    rc.enabled = pgob.ease != "OFF"
-    rc.prop(pgob, "reflect", text="")
-    rc = row.column(align=True)
-    rc.prop(pgob, "rev", toggle=True)
-
-
-# ---- BLEND-PROFILES COLLECTION ITEM EDITOR
+        getattr(ModPDOP, self.provider)(cns, cvs, self.profed, isprof=True)
 
 
 class PTDBLNPOPM_OT_blnd_edit(bpy.types.Operator):
@@ -2132,7 +1870,7 @@ class PTDBLNPOPM_OT_blnd_edit(bpy.types.Operator):
         item.fac = self.fac
         self.copy_to_pg(item)
         try:
-            ModPOP.scene_update(scene)
+            ModPOPM.scene_update(scene)
         except Exception as my_err:
             pool.update_ok = True
             print(f"blnd_edit: {my_err.args}")
@@ -2145,17 +1883,17 @@ class PTDBLNPOPM_OT_blnd_edit(bpy.types.Operator):
         layout = self.layout
         if self.selview in {"nodes", "all"}:
             box = layout.box()
-            params_layout_draw(box, self.nprams, ("Nodes", "Groups"))
+            ModPDOP.params_layout_draw(box, self.nprams, ("Nodes", "Groups"))
         if self.selview in {"points", "all"}:
             box = layout.box()
-            params_layout_draw(box, self.iprams, ("Points", "Groups"))
+            ModPDOP.params_layout_draw(box, self.iprams, ("Points", "Groups"))
         if self.selview in {"blend", "all"}:
             box = layout.box()
             row = box.row(align=True)
             s = row.split(factor=0.25)
             cns = s.column(align=True)
             cvs = s.column(align=True)
-            ppbdraw[self.provider](cns, cvs, self.blnded, isprof=True)
+            getattr(ModPDOP, self.provider)(cns, cvs, self.blnded, isprof=True)
         row = layout.row(align=True)
         row.prop(self, "selview", expand=True)
         box = layout.box()
@@ -2172,9 +1910,6 @@ class PTDBLNPOPM_OT_blnd_edit(bpy.types.Operator):
         row.prop(self.blnded, "rot_align", text="")
         row = sc.row(align=True)
         row.prop(self, "fac", text="")
-
-
-# ---- PATH LOCATIONS COLLECTION ITEM EDITOR
 
 
 class PTDBLNPOPM_OT_pathloc_edit(bpy.types.Operator):
@@ -2194,7 +1929,7 @@ class PTDBLNPOPM_OT_pathloc_edit(bpy.types.Operator):
     )
     abs_move: bpy.props.BoolProperty(
         name="move",
-        description=("relative or absolute translation in path space"),
+        description="relative or absolute translation (path space)",
         default=False,
     )
     nprams: bpy.props.PointerProperty(type=PTDBLNPOPM_params)
@@ -2228,7 +1963,7 @@ class PTDBLNPOPM_OT_pathloc_edit(bpy.types.Operator):
         item.axis = self.axis
         self.copy_to_pg(item)
         try:
-            ModPOP.scene_update(scene)
+            ModPOPM.scene_update(scene)
         except Exception as my_err:
             pool.update_ok = True
             print(f"pathloc_edit: {my_err.args}")
@@ -2240,7 +1975,7 @@ class PTDBLNPOPM_OT_pathloc_edit(bpy.types.Operator):
     def draw(self, context):
         layout = self.layout
         box = layout.box()
-        params_layout_draw(box, self.nprams, ("Nodes", "Groups"))
+        ModPDOP.params_layout_draw(box, self.nprams, ("Nodes", "Groups"))
         box = layout.box()
         row = box.row(align=True)
         s = row.split(factor=0.25)
@@ -2254,16 +1989,13 @@ class PTDBLNPOPM_OT_pathloc_edit(bpy.types.Operator):
         row.prop(
             self,
             "abs_move",
-            text=("Absolute" if self.abs_move else "Relative"),
+            text=("absolute" if self.abs_move else "relative"),
             toggle=True,
         )
         row = sc.row(align=True)
         row.prop(self, "axis", text="")
         row = sc.row(align=True)
         row.prop(self, "fac", text="")
-
-
-# ---- PROFILE LOCATIONS COLLECTION ITEM EDITOR
 
 
 class PTDBLNPOPM_OT_profloc_edit(bpy.types.Operator):
@@ -2283,10 +2015,7 @@ class PTDBLNPOPM_OT_profloc_edit(bpy.types.Operator):
     )
     abs_move: bpy.props.BoolProperty(
         name="move",
-        description=(
-            "relative (standard) or absolute (experimental) "
-            "translation in profile space"
-        ),
+        description="relative or absolute translation (profile space)",
         default=False,
     )
     selview: bpy.props.EnumProperty(
@@ -2335,7 +2064,7 @@ class PTDBLNPOPM_OT_profloc_edit(bpy.types.Operator):
         item.abs_move = self.abs_move
         self.copy_to_pg(item)
         try:
-            ModPOP.scene_update(scene)
+            ModPOPM.scene_update(scene)
         except Exception as my_err:
             pool.update_ok = True
             print(f"profloc_edit: {my_err.args}")
@@ -2348,10 +2077,10 @@ class PTDBLNPOPM_OT_profloc_edit(bpy.types.Operator):
         layout = self.layout
         if self.selview in {"nodes", "both"}:
             box = layout.box()
-            params_layout_draw(box, self.nprams, ("Nodes", "Groups"))
+            ModPDOP.params_layout_draw(box, self.nprams, ("Nodes", "Groups"))
         if self.selview in {"points", "both"}:
             box = layout.box()
-            params_layout_draw(box, self.iprams, ("Points", "Groups"))
+            ModPDOP.params_layout_draw(box, self.iprams, ("Points", "Groups"))
         row = layout.row(align=True)
         row.prop(self, "selview", expand=True)
         box = layout.box()
@@ -2367,17 +2096,11 @@ class PTDBLNPOPM_OT_profloc_edit(bpy.types.Operator):
         row.prop(
             self,
             "abs_move",
-            text=("Absolute" if self.abs_move else "Relative"),
+            text=("absolute" if self.abs_move else "relative"),
             toggle=True,
         )
         row = sc.row(align=True)
-        rc = row.column(align=True)
-        rc.prop(self, "axis", index=0, text="")
-        rc = row.column(align=True)
-        rc.prop(self, "axis", index=1, text="")
-        rc = row.column(align=True)
-        rc.enabled = self.abs_move
-        rc.prop(self, "axis", index=2, text="")
+        row.prop(self, "axis", text="")
         row = sc.row(align=True)
         row.prop(self, "fac", text="")
 
@@ -2394,17 +2117,17 @@ classes = (
     PTDBLNPOPM_anim_amount,
     PTDBLNPOPM_anim_rots,
     PTDBLNPOPM_params,
+    PTDBLNPOPM_pathed,
+    PTDBLNPOPM_profed,
+    PTDBLNPOPM_path,
     PTDBLNPOPM_pathloc,
     PTDBLNPOPM_pathrot,
-    PTDBLNPOPM_profloc,
-    PTDBLNPOPM_profrot,
-    PTDBLNPOPM_pathed,
-    PTDBLNPOPM_path,
-    PTDBLNPOPM_profed,
     PTDBLNPOPM_prof,
     PTDBLNPOPM_blnd,
-    PTDBLNPOPM_meshrot,
+    PTDBLNPOPM_profloc,
+    PTDBLNPOPM_profrot,
     PTDBLNPOPM_noiz,
+    PTDBLNPOPM_meshrot,
     PTDBLNPOPM_rngs,
     PTDBLNPOPM_track,
     PTDBLNPOPM_anicalc,

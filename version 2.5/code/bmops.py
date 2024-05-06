@@ -29,58 +29,13 @@ import json
 
 from bpy_extras.io_utils import ImportHelper, ExportHelper
 
-from . import mpopm as ModPOP
+from . import mpopm as ModPOPM
+from . import mfnop as ModFNOP
 
 
 # ------------------------------------------------------------------------------
 #
-# ----------------------------- OPERATORS --------------------------------------
-
-
-def validate_scene_object(scene, ob):
-    if ob and (ob.name not in scene.objects):
-        bpy.data.objects.remove(ob)
-
-
-def get_new_mesh(scene):
-    name = "pop_mesh"
-    me = bpy.data.meshes.new(name)
-    ob = bpy.data.objects.new(name, me)
-    scene.collection.objects.link(ob)
-    return ob
-
-
-def action_remove(action):
-    if action:
-        action.fcurves.clear()
-        bpy.data.actions.remove(action)
-
-
-def nla_track_remove(ob, track_name):
-    t = ob.animation_data.nla_tracks.get(track_name)
-    if t:
-        ns = list(t.strips)
-        for s in ns:
-            action_remove(s.action)
-            t.strips.remove(s)
-        ob.animation_data.nla_tracks.remove(t)
-
-
-def nla_track_remove_all(ob):
-    nt = list(ob.animation_data.nla_tracks)
-    for t in nt:
-        ns = list(t.strips)
-        for s in ns:
-            action_remove(s.action)
-            t.strips.remove(s)
-        ob.animation_data.nla_tracks.remove(t)
-
-
-def anim_data_remove(ob):
-    if ob.animation_data:
-        nla_track_remove_all(ob)
-        action_remove(ob.animation_data.action)
-        ob.animation_data_clear()
+# ------------------------------- BMOPS ----------------------------------------
 
 
 # ---- POP OPERATORS
@@ -94,13 +49,43 @@ class PTDBLNPOPM_OT_pop_simple_update(bpy.types.Operator):
 
     def execute(self, context):
         scene = context.scene
-        pool = context.scene.ptdblnpopm_pool
+        pool = scene.ptdblnpopm_pool
         pool.update_ok = False
         try:
-            ModPOP.scene_update(scene)
+            ModPOPM.scene_update(scene)
         except Exception as my_err:
             pool.update_ok = True
             print(f"pop_simple_update: {my_err.args}")
+            return {"CANCELLED"}
+        pool.update_ok = True
+        return {"FINISHED"}
+
+
+class PTDBLNPOPM_OT_facerange_react(bpy.types.Operator):
+    bl_label = "Range Active Toggle"
+    bl_idname = "ptdblnpopm.facerange_react"
+    bl_options = {"REGISTER", "INTERNAL", "UNDO"}
+
+    active: bpy.props.BoolProperty(default=False, options={"HIDDEN"})
+
+    @classmethod
+    def description(cls, context, properties):
+        if getattr(properties, "active"):
+            return "disable active range faces"
+        return "enable active range faces"
+
+    def execute(self, context):
+        scene = context.scene
+        pool = scene.ptdblnpopm_pool
+        pool.update_ok = False
+        try:
+            pool.rngs.active = not self.active
+            # scene updates
+            ModPOPM.scene_update(scene)
+        except Exception as my_err:
+            pool.update_ok = True
+            print(f"facerange_react: {my_err.args}")
+            self.report({"INFO"}, f"{my_err.args}")
             return {"CANCELLED"}
         pool.update_ok = True
         return {"FINISHED"}
@@ -123,7 +108,7 @@ class PTDBLNPOPM_OT_pop_reset(bpy.types.Operator):
 
     def invoke(self, context, event):
         pool = context.scene.ptdblnpopm_pool
-        validate_scene_object(context.scene, pool.pop_mesh)
+        ModFNOP.validate_scene_object(context.scene, pool.pop_mesh)
         if bool(pool.pop_mesh) and pool.replace_mesh and pool.show_warn:
             return context.window_manager.invoke_confirm(self, event)
         return self.execute(context)
@@ -133,18 +118,24 @@ class PTDBLNPOPM_OT_pop_reset(bpy.types.Operator):
         pool = scene.ptdblnpopm_pool
         pool.update_ok = False
         try:
+            trash = pool.trax_idx >= 0
             pool.trax.clear()
             pool.trax_idx = -1
             pool.animorph = False
-            if bool(pool.pop_mesh) and pool.replace_mesh:
-                anim_data_remove(pool.pop_mesh.data)
+            if pool.pop_mesh and pool.replace_mesh:
+                me = pool.pop_mesh.data
+                if me.animation_data:
+                    me.animation_data_clear()
+                if trash:
+                    print("---- popmesh pop_reset: delete trash")
+                    bpy.ops.outliner.orphans_purge(do_recursive=True)
             else:
-                pool.pop_mesh = get_new_mesh(scene)
+                pool.pop_mesh = ModFNOP.get_new_mesh(scene)
             if self.newdef:
                 pool.props_unset()
             pool.pop_mesh.data.use_auto_smooth = pool.auto_smooth
             pool.pop_mesh.show_wire = pool.show_wire
-            ModPOP.scene_update(scene, setup="all")
+            ModPOPM.scene_update(scene, setup="all")
         except Exception as my_err:
             pool.update_ok = True
             print(f"pop_reset: {my_err.args}")
@@ -181,14 +172,14 @@ class PTDBLNPOPM_OT_setup_provider(bpy.types.Operator):
         pg_edit.upv.clear()
         try:
             if provider != "custom":
-                ModPOP.scene_update(scene, setup=caller)
+                ModPOPM.scene_update(scene, setup=caller)
                 pool.update_ok = True
                 return {"FINISHED"}
-            validate_scene_object(scene, pg.user_ob)
+            ModFNOP.validate_scene_object(scene, pg.user_ob)
             ob = pg.user_ob
             if not ob:
                 raise Exception("invalid object!")
-            verts = ModPOP.user_mesh_verts(ob.data)
+            verts = ModPOPM.user_mesh_verts(ob.data)
             for v in verts:
                 i = pg_edit.upv.add()
                 i.vert = v
@@ -197,7 +188,7 @@ class PTDBLNPOPM_OT_setup_provider(bpy.types.Operator):
                 pg_edit.user_dim[i] = v
                 pg_edit.cust_dim[i] = v
             pg.user_ob = None
-            ModPOP.scene_update(scene, setup=caller)
+            ModPOPM.scene_update(scene, setup=caller)
         except Exception as my_err:
             pg.clean = False
             pg.user_ob = None
@@ -225,7 +216,7 @@ class PTDBLNPOPM_OT_update_preset(bpy.types.Operator):
             if caller == "prof":
                 for item in pool.blnd:
                     item.active = False
-            ModPOP.scene_update(scene, setup=caller)
+            ModPOPM.scene_update(scene, setup=caller)
         except Exception as my_err:
             pool.update_ok = True
             print(f"update_preset: {my_err.args}")
@@ -317,7 +308,7 @@ class PTDBLNPOPM_OT_pathrot_edit(bpy.types.Operator):
         pathrot.piv_object = self.piv_object
         pathrot.batt = self.batt
         try:
-            ModPOP.scene_update(scene)
+            ModPOPM.scene_update(scene)
         except Exception as my_err:
             pool.update_ok = True
             print(f"pathrot_edit: {my_err.args}")
@@ -398,7 +389,7 @@ class PTDBLNPOPM_OT_profrot_edit(bpy.types.Operator):
         profrot.twist = self.twist
         profrot.follow_limit = self.follow_limit
         try:
-            ModPOP.scene_update(scene)
+            ModPOPM.scene_update(scene)
         except Exception as my_err:
             pool.update_ok = True
             print(f"profrot_edit: {my_err.args}")
@@ -467,7 +458,7 @@ class PTDBLNPOPM_OT_meshrot_edit(bpy.types.Operator):
         meshrot.angle = self.angle
         meshrot.pivot = self.pivot
         try:
-            ModPOP.scene_update(scene)
+            ModPOPM.scene_update(scene)
         except Exception as my_err:
             pool.update_ok = True
             print(f"meshrot_edit: {my_err.args}")
@@ -528,7 +519,7 @@ class PTDBLNPOPM_OT_pop_noiz(bpy.types.Operator):
         noiz.nseed = self.nseed
         noiz.vfac = self.vfac
         try:
-            ModPOP.scene_update(scene)
+            ModPOPM.scene_update(scene)
         except Exception as my_err:
             pool.update_ok = True
             print(f"pop_noiz: {my_err.args}")
@@ -660,7 +651,7 @@ class PTDBLNPOPM_OT_citem_enable(bpy.types.Operator):
                 idx = getattr(pool, iname)
                 item = coll[idx]
                 item.active = not item.active
-            ModPOP.scene_update(scene)
+            ModPOPM.scene_update(scene)
         except Exception as my_err:
             pool.update_ok = True
             print(f"{cname}_enable: {my_err.args}")
@@ -702,7 +693,7 @@ class PTDBLNPOPM_OT_citem_remove(bpy.types.Operator):
                 coll.remove(idx)
                 idx = min(max(0, idx - 1), len(coll) - 1)
                 setattr(pool, iname, idx)
-            ModPOP.scene_update(scene)
+            ModPOPM.scene_update(scene)
         except Exception as my_err:
             pool.update_ok = True
             print(f"{cname}_remove: {my_err.args}")
@@ -740,7 +731,7 @@ class PTDBLNPOPM_OT_citem_move(bpy.types.Operator):
                 cidx = idx - 1
                 coll.move(idx, cidx)
                 setattr(pool, iname, cidx)
-            ModPOP.scene_update(scene)
+            ModPOPM.scene_update(scene)
         except Exception as my_err:
             pool.update_ok = True
             print(f"{cname}_move: {my_err.args}")
@@ -774,14 +765,14 @@ class PTDBLNPOPM_OT_setup_blnd_provider(bpy.types.Operator):
                     raise Exception("vertex count mismatch!")
                 i_ed.npts = npts
                 if item.active:
-                    ModPOP.scene_update(scene)
+                    ModPOPM.scene_update(scene)
                 pool.update_ok = True
                 return {"FINISHED"}
-            validate_scene_object(scene, item.user_ob)
+            ModFNOP.validate_scene_object(scene, item.user_ob)
             ob = item.user_ob
             if not ob:
                 raise Exception("invalid object!")
-            verts = ModPOP.user_mesh_verts(ob.data)
+            verts = ModPOPM.user_mesh_verts(ob.data)
             if len(verts) != npts:
                 raise Exception("vertex count mismatch!")
             for v in verts:
@@ -794,7 +785,7 @@ class PTDBLNPOPM_OT_setup_blnd_provider(bpy.types.Operator):
             i_ed.npts = npts
             item.user_ob = None
             if item.active:
-                ModPOP.scene_update(scene)
+                ModPOPM.scene_update(scene)
         except Exception as my_err:
             item.user_ob = None
             item.active = False
@@ -892,7 +883,7 @@ class PTDBLNPOPM_OT_blnd_enable(bpy.types.Operator):
                         item.active = len(item.blnded.upv) == npts
                         if not item.active:
                             raise Exception("vertex count mismatch!")
-            ModPOP.scene_update(scene)
+            ModPOPM.scene_update(scene)
         except Exception as my_err:
             pool.update_ok = True
             print(f"blnd_enable: {my_err.args}")
@@ -928,7 +919,7 @@ class PTDBLNPOPM_OT_blnd_remove(bpy.types.Operator):
                 idx = pool.blnd_idx
                 pool.blnd.remove(idx)
                 pool.blnd_idx = min(max(0, idx - 1), len(pool.blnd) - 1)
-            ModPOP.scene_update(scene)
+            ModPOPM.scene_update(scene)
         except Exception as my_err:
             pool.update_ok = True
             print(f"blnd_remove: {my_err.args}")
@@ -959,7 +950,7 @@ class PTDBLNPOPM_OT_blnd_move(bpy.types.Operator):
             elif idx > 0:
                 pool.blnd.move(idx, idx - 1)
                 pool.blnd_idx -= 1
-            ModPOP.scene_update(scene)
+            ModPOPM.scene_update(scene)
         except Exception as my_err:
             pool.update_ok = True
             print(f"blnd_move: {my_err.args}")
@@ -970,69 +961,6 @@ class PTDBLNPOPM_OT_blnd_move(bpy.types.Operator):
 
 
 # ---- FILE I/O OPERATORS
-
-
-file_excluded_attributes = {
-    "clean",
-    "user_ob",
-    "pathloc_idx",
-    "profloc_idx",
-    "blnd_idx",
-    "trax",
-    "trax_idx",
-    "update_ok",
-    "animorph",
-    "act_name",
-    "pop_mesh",
-    "replace_mesh",
-    "show_warn",
-    "show_wire",
-    "auto_smooth",
-    "shade_smooth",
-    "anicalc",
-}
-
-
-def setts_to_json(pg):
-    d = {}
-    vecprops = [bpy.props.IntVectorProperty, bpy.props.FloatVectorProperty]
-    for key in pg.__annotations__.keys():
-        if key in file_excluded_attributes:
-            continue
-        prop_type = pg.__annotations__[key].function
-        if prop_type == bpy.props.PointerProperty:
-            d[key] = setts_to_json(getattr(pg, key))
-        elif prop_type == bpy.props.CollectionProperty:
-            d[key] = [setts_to_json(i) for i in getattr(pg, key)]
-        elif prop_type in vecprops:
-            d[key] = list(getattr(pg, key))
-        else:
-            d[key] = getattr(pg, key)
-    return d
-
-
-def json_to_setts(d, pg):
-    for key in d.keys():
-        if (key not in pg.__annotations__.keys()) or (key in file_excluded_attributes):
-            continue
-        prop_type = pg.__annotations__[key].function
-        if prop_type == bpy.props.PointerProperty:
-            json_to_setts(d[key], getattr(pg, key))
-        elif prop_type == bpy.props.CollectionProperty:
-            sub_d = d[key]
-            sub_pg = getattr(pg, key)
-            if key == "upv":
-                for k in sub_d:
-                    el = sub_pg.add()
-                    json_to_setts(k, el)
-            else:
-                iname = f"{key}_idx"
-                for k in sub_d:
-                    el = sub_pg.add()
-                    json_to_setts(k, el)
-                setattr(pg, iname, len(sub_pg) - 1)
-        else:
-            setattr(pg, key, d[key])
 
 
 class PTDBLNPOPM_OT_write_setts(bpy.types.Operator, ExportHelper):
@@ -1055,7 +983,7 @@ class PTDBLNPOPM_OT_write_setts(bpy.types.Operator, ExportHelper):
             fpath = self.filepath
             path = os.path.dirname(fpath)
             os.makedirs(path, exist_ok=True)
-            data = setts_to_json(pool)
+            data = ModFNOP.setts_to_json(pool)
             with open(fpath, mode="w") as f:
                 json.dump(data, f, indent=2)
         except Exception as my_err:
@@ -1078,7 +1006,7 @@ class PTDBLNPOPM_OT_read_setts(bpy.types.Operator, ImportHelper):
     def invoke(self, context, event):
         scene = context.scene
         pool = scene.ptdblnpopm_pool
-        validate_scene_object(scene, pool.pop_mesh)
+        ModFNOP.validate_scene_object(scene, pool.pop_mesh)
         self.filepath = ""
         context.window_manager.fileselect_add(self)
         return {"RUNNING_MODAL"}
@@ -1093,19 +1021,25 @@ class PTDBLNPOPM_OT_read_setts(bpy.types.Operator, ImportHelper):
                 raise Exception("invalid file path")
             with open(fpath, mode="r") as f:
                 data = json.load(f)
+            trash = pool.trax_idx >= 0
             pool.trax.clear()
             pool.trax_idx = -1
             pool.animorph = False
             replace_mesh = pool.replace_mesh
             pool.props_unset()
-            json_to_setts(data, pool)
-            if bool(pool.pop_mesh) and replace_mesh:
-                anim_data_remove(pool.pop_mesh.data)
+            ModFNOP.json_to_setts(data, pool)
+            if pool.pop_mesh and replace_mesh:
+                me = pool.pop_mesh.data
+                if me.animation_data:
+                    me.animation_data_clear()
+                if trash:
+                    print("---- popmesh read_setts: delete trash")
+                    bpy.ops.outliner.orphans_purge(do_recursive=True)
             else:
-                pool.pop_mesh = get_new_mesh(scene)
+                pool.pop_mesh = ModFNOP.get_new_mesh(scene)
             pool.pop_mesh.data.use_auto_smooth = pool.auto_smooth
             pool.pop_mesh.show_wire = pool.show_wire
-            ModPOP.scene_update(scene, setup="all")
+            ModPOPM.scene_update(scene, setup="all")
         except Exception as my_err:
             pool.update_ok = True
             print(f"read_setts: {my_err.args}")
@@ -1150,17 +1084,21 @@ class PTDBLNPOPM_OT_animorph_setup(bpy.types.Operator):
         scene = context.scene
         pool = scene.ptdblnpopm_pool
         pool.update_ok = False
-        ob = pool.pop_mesh
         try:
-            anim_data_remove(ob.data)
+            me = pool.pop_mesh.data
+            if me.animation_data:
+                me.animation_data_clear()
+            if pool.trax:
+                print("---- popmesh animode: delete trash")
+                bpy.ops.outliner.orphans_purge(do_recursive=True)
             pool.trax.clear()
             pool.trax_idx = -1
             if self.exiting:
                 pool.animorph = False
             else:
-                ob.data.animation_data_create()
+                me.animation_data_create()
                 pool.animorph = True
-            ModPOP.scene_update(scene)
+            ModPOPM.scene_update(scene)
         except Exception as my_err:
             pool.update_ok = True
             print(f"animorph_setup: {my_err.args}")
@@ -1195,12 +1133,6 @@ class PTDBLNPOPM_OT_anicycmirend(bpy.types.Operator):
         return {"FINISHED"}
 
 
-def anicalc_factors(val):
-    return set(
-        f for i in range(1, int(val**0.5) + 1) if not val % i for f in (i, val // i)
-    )
-
-
 class PTDBLNPOPM_OT_anicalc(bpy.types.Operator):
     bl_label = "Anicalc"
     bl_idname = "ptdblnpopm.anicalc"
@@ -1216,14 +1148,14 @@ class PTDBLNPOPM_OT_anicalc(bpy.types.Operator):
                 val = clc.items * clc.step // clc.offset + clc.start
                 clc.info = str(val)
             elif caller == "offsets":
-                offsets = sorted(anicalc_factors(clc.items))[:-1]
+                offsets = sorted(ModFNOP.anicalc_factors(clc.items))[:-1]
                 clc.info = ", ".join(str(i) for i in offsets)
             else:
                 loop = clc.loop
                 if not loop % 2:
                     raise Exception("loop must be odd, positive integer!")
                 hlp = (loop - 1) // 2
-                cycles = sorted(anicalc_factors(hlp))
+                cycles = sorted(ModFNOP.anicalc_factors(hlp))
                 clc.info = ", ".join(str(i) for i in cycles)
         except Exception as my_err:
             clc.info = ""
@@ -1517,18 +1449,24 @@ class PTDBLNPOPM_OT_track_remove(bpy.types.Operator):
     def execute(self, context):
         pool = context.scene.ptdblnpopm_pool
         pool.update_ok = False
-        ob = pool.pop_mesh
         try:
+            me = pool.pop_mesh.data
             if self.doall:
-                nla_track_remove_all(ob.data)
+                nt = [t for t in me.animation_data.nla_tracks]
+                for t in nt:
+                    me.animation_data.nla_tracks.remove(t)
                 pool.trax.clear()
                 pool.trax_idx = -1
             else:
                 idx = pool.trax_idx
                 item = pool.trax[idx]
-                nla_track_remove(ob.data, item.t_name)
+                t = me.animation_data.nla_tracks.get(item.t_name)
+                if t:
+                    me.animation_data.nla_tracks.remove(t)
                 pool.trax.remove(idx)
                 pool.trax_idx = min(max(0, idx - 1), len(pool.trax) - 1)
+            print("---- popmesh track_remove: delete trash")
+            bpy.ops.outliner.orphans_purge(do_recursive=True)
         except Exception as my_err:
             pool.update_ok = True
             print(f"track_remove: {my_err.args}")
@@ -1559,6 +1497,7 @@ class PTDBLNPOPM_OT_track_copy(bpy.types.Operator):
             source = pool.trax.add()
             for key in d.keys():
                 setattr(source, key, d[key])
+            source.name = f"{source.name}_copy"
             source.t_name = name
             idx = len(pool.trax) - 1
             pool.trax.move(idx, 0)
@@ -1589,288 +1528,8 @@ class PTDBLNPOPM_OT_track_copy(bpy.types.Operator):
         return {"FINISHED"}
 
 
-# ---- ANIMATION ACTION OPERATOR
-
-
-def aniact_fac_list(mirror, cycles, loop):
-    def linear_list(dt, m, cnt):
-        if not m:
-            return [dt * i for i in range(cnt)]
-        dt2 = 2 * dt
-        return [dt2 * i if (dt * i) < 0.5 else 2 - dt2 * i for i in range(cnt)]
-
-    if not mirror:
-        return linear_list(1 / (loop - 1), False, loop)
-    cycles = min(loop // 2, cycles)
-    grp = loop // cycles
-    odd_grp = bool(grp % 2)
-    div = grp - 1 if (odd_grp or cycles == 1) else grp
-    lst = linear_list(1 / div, True, grp)
-    if loop > grp:
-        m = loop // div + 1
-        l2 = lst[1:] if odd_grp else lst[1:] + lst[:1]
-        lst = lst[:1] + l2 * m
-    return [lst[i] for i in range(loop)]
-
-
-def aniact_path_edit_dict(path, loop):
-    d = {}
-    adim = path.ani_dim
-    dim_mirr = path.ani_dim_mirror.active
-    dim_cycl = path.ani_dim_mirror.cycles
-
-    def path_dim_list(pdim, anpdim):
-        if not adim:
-            return [pdim] * loop
-        lst = aniact_fac_list(dim_mirr, dim_cycl, loop)
-        return [[v1 + (v2 - v1) * i for v1, v2 in zip(pdim, anpdim)] for i in lst]
-
-    def path_value_list(flag, v1, v2, m, c):
-        if not flag or (v1 == v2):
-            return [v1] * loop
-        lst = aniact_fac_list(m, c, loop)
-        diff = v2 - v1
-        return [v1 + diff * i for i in lst]
-
-    p_n = path.provider
-    if p_n == "custom":
-        d["dim"] = path_dim_list(path.pathed.cust_dim, path.ani_dim_3d)
-        return d
-    if p_n == "polygon":
-        d["dim"] = path_dim_list(path.pathed.pol_dim, path.ani_dim_2d)
-        return d
-    afac = path.ani_fac
-    fac_mirr = path.ani_fac_mirror.active
-    fac_cycl = path.ani_fac_mirror.cycles
-    if p_n == "line":
-        d["dim"] = path_value_list(
-            adim, path.pathed.lin_dim, path.ani_lin_dim, dim_mirr, dim_cycl
-        )
-        d["fac"] = path_value_list(
-            afac, path.pathed.lin_exp, path.ani_lin_exp, fac_mirr, fac_cycl
-        )
-        return d
-    if p_n == "arc":
-        d["dim"] = path_value_list(
-            adim, path.pathed.arc_dim, path.ani_arc_dim, dim_mirr, dim_cycl
-        )
-        d["fac"] = path_value_list(
-            afac, path.pathed.arc_fac, path.ani_arc_fac, fac_mirr, fac_cycl
-        )
-        return d
-    if p_n == "spiral":
-        d["dim"] = path_value_list(
-            adim, path.pathed.spi_dim, path.ani_spi_dim, dim_mirr, dim_cycl
-        )
-        d["fac"] = path_value_list(
-            afac, path.pathed.spi_revs, path.ani_spi_revs, fac_mirr, fac_cycl
-        )
-        return d
-    if p_n == "ellipse":
-        d["dim"] = path_dim_list(path.pathed.ell_dim, path.ani_dim_2d)
-        d["fac"] = path_value_list(
-            afac, path.pathed.ellstep_val, path.ani_ellstep_val, fac_mirr, fac_cycl
-        )
-        return d
-    afac2 = path.ani_fac2
-    fac2_mirr = path.ani_fac2_mirror.active
-    fac2_cycl = path.ani_fac2_mirror.cycles
-    afac3 = path.ani_fac3
-    fac3_mirr = path.ani_fac3_mirror.active
-    fac3_cycl = path.ani_fac3_mirror.cycles
-    if p_n == "wave":
-        d["dim"] = path_value_list(
-            adim, path.pathed.wav_dim, path.ani_wav_dim, dim_mirr, dim_cycl
-        )
-        d["fac"] = path_value_list(
-            afac, path.pathed.wav_amp, path.ani_wav_amp, fac_mirr, fac_cycl
-        )
-        d["fac2"] = path_value_list(
-            afac2, path.pathed.wav_frq, path.ani_wav_frq, fac2_mirr, fac2_cycl
-        )
-        d["fac3"] = path_value_list(
-            afac3, path.pathed.wav_pha, path.ani_wav_pha, fac3_mirr, fac3_cycl
-        )
-        return d
-    afac4 = path.ani_fac4
-    fac4_mirr = path.ani_fac4_mirror.active
-    fac4_cycl = path.ani_fac4_mirror.cycles
-    d["dim"] = path_dim_list(path.pathed.hel_dim, path.ani_dim_2d)
-    d["fac"] = path_value_list(
-        afac, path.pathed.hel_len, path.ani_hel_len, fac_mirr, fac_cycl
-    )
-    d["fac2"] = path_value_list(
-        afac2, path.pathed.hel_fac, path.ani_hel_fac, fac2_mirr, fac2_cycl
-    )
-    d["fac3"] = path_value_list(
-        afac3, path.pathed.hel_stp, path.ani_hel_stp, fac3_mirr, fac3_cycl
-    )
-    d["fac4"] = path_value_list(
-        afac4, path.pathed.hel_pha, path.ani_hel_pha, fac4_mirr, fac4_cycl
-    )
-    return d
-
-
-def aniact_prof_edit_dict(prof, loop):
-    d = {}
-    adim = prof.ani_dim
-    dim_mirr = prof.ani_dim_mirror.active
-    dim_cycl = prof.ani_dim_mirror.cycles
-
-    def prof_seq_list(pdim):
-        if not adim:
-            return [pdim] * loop
-        lst = aniact_fac_list(dim_mirr, dim_cycl, loop)
-        anpdim = prof.ani_epc_dim
-        return [[v1 + (v2 - v1) * i for v1, v2 in zip(pdim, anpdim)] for i in lst]
-
-    def prof_value_list(flag, v1, v2, m, c):
-        if not flag or (v1 == v2):
-            return [v1] * loop
-        lst = aniact_fac_list(m, c, loop)
-        diff = v2 - v1
-        return [v1 + diff * i for i in lst]
-
-    p_n = prof.provider
-    if p_n == "custom":
-        d["dim"] = prof_seq_list(prof.profed.cust_dim)
-        return d
-    if p_n == "polygon":
-        d["dim"] = prof_seq_list(prof.profed.pol_dim)
-        return d
-    afac = prof.ani_fac
-    fac_mirr = prof.ani_fac_mirror.active
-    fac_cycl = prof.ani_fac_mirror.cycles
-    if p_n == "line":
-        d["dim"] = prof_value_list(
-            adim, prof.profed.lin_dim, prof.ani_lin_dim, dim_mirr, dim_cycl
-        )
-        d["fac"] = prof_value_list(
-            afac, prof.profed.lin_exp, prof.ani_lin_exp, fac_mirr, fac_cycl
-        )
-        return d
-    if p_n == "arc":
-        d["dim"] = prof_value_list(
-            adim, prof.profed.arc_dim, prof.ani_arc_dim, dim_mirr, dim_cycl
-        )
-        d["fac"] = prof_value_list(
-            afac, prof.profed.arc_fac, prof.ani_arc_fac, fac_mirr, fac_cycl
-        )
-        return d
-    if p_n == "ellipse":
-        d["dim"] = prof_seq_list(prof.profed.ell_dim)
-        d["fac"] = prof_value_list(
-            afac, prof.profed.ellstep_val, prof.ani_ellstep_val, fac_mirr, fac_cycl
-        )
-        return d
-    afac2 = prof.ani_fac2
-    fac2_mirr = prof.ani_fac2_mirror.active
-    fac2_cycl = prof.ani_fac2_mirror.cycles
-    afac3 = prof.ani_fac3
-    fac3_mirr = prof.ani_fac3_mirror.active
-    fac3_cycl = prof.ani_fac3_mirror.cycles
-    d["dim"] = prof_value_list(
-        adim, prof.profed.wav_dim, prof.ani_wav_dim, dim_mirr, dim_cycl
-    )
-    d["fac"] = prof_value_list(
-        afac, prof.profed.wav_amp, prof.ani_wav_amp, fac_mirr, fac_cycl
-    )
-    d["fac2"] = prof_value_list(
-        afac2, prof.profed.wav_frq, prof.ani_wav_frq, fac2_mirr, fac2_cycl
-    )
-    d["fac3"] = prof_value_list(
-        afac3, prof.profed.wav_pha, prof.ani_wav_pha, fac3_mirr, fac3_cycl
-    )
-    return d
-
-
-def aniact_plocval_list(inst, loop):
-    v1 = inst.fac
-    v2 = inst.ani_fac.fac
-    if not inst.ani_fac.active or (v1 == v2):
-        return [v1] * loop
-    lst = aniact_fac_list(inst.ani_fac.mirror.active, inst.ani_fac.mirror.cycles, loop)
-    diff = v2 - v1
-    return [v1 + diff * i for i in lst]
-
-
-def aniact_blndval_list(item, loop):
-    v1 = item.fac
-    v2 = item.ani_fac_val
-    if not item.ani_fac or (v1 == v2):
-        return [v1] * loop
-    lst = aniact_fac_list(item.ani_fac_mirror.active, item.ani_fac_mirror.cycles, loop)
-    diff = v2 - v1
-    return [v1 + diff * i for i in lst]
-
-
-def aniact_rotation_list(angle, fra1, fra2, loop):
-    angs = [0 if fra1 > i else angle for i in range(loop)]
-    if fra2 > fra1 and fra2 < loop:
-        d = loop - fra2
-        angs[fra2:] = [0] * d
-    return angs
-
-
-def aniact_noiz_list(noiz, loop):
-    def bln_val_list(amp, beg, end, stp, loop):
-        beg = 0 if beg < 2 else beg
-        end = 0 if end < 2 else end
-        vals = []
-        if beg > 0:
-            beg = min(loop, beg)
-            v = amp / (beg - 1)
-            vals += [v * i for i in range(beg)]
-        rng = loop - beg
-        if rng > 0:
-            end = min(rng, end)
-            if rng > end:
-                rng -= end
-                v = amp
-                ct = 0
-                for i in range(rng):
-                    vals.append(v)
-                    ct += 1
-                    if ct == stp:
-                        v = 0 if v == amp else amp
-                        ct = 0
-            if end > 0:
-                v2 = vals[-1]
-                v = -v2 / end
-                vals += [v2 + v * i for i in range(1, end)] + [0]
-        return vals
-
-    amp = noiz.ampli
-    rndseed = noiz.ani_seed
-    if not (noiz.ani_noiz and amp):
-        return [amp] * loop
-    return bln_val_list(amp, noiz.ani_blin, noiz.ani_blout, noiz.ani_stp, loop)
-
-
-def aniact_fcurve_create(action, dp, di, fl, vl, ki):
-    fc = action.fcurves.new(data_path=dp, index=di)
-    items = len(fl)
-    fc.keyframe_points.add(count=items)
-    fc.keyframe_points.foreach_set("co", [i for fv in zip(fl, vl) for i in fv])
-    fc.keyframe_points.foreach_set("interpolation", [ki] * items)
-    fc.update()
-
-
-def aniact_nla_track_add(mesh_data, action):
-    name = action.name
-    track = mesh_data.animation_data.nla_tracks.new()
-    track.name = name
-    start = int(action.frame_range[0])
-    strip = track.strips.new(name, start, action)
-    strip.blend_type = "REPLACE"
-    strip.use_auto_blend = False
-    strip.blend_in = 0
-    strip.blend_out = 0
-    strip.extrapolation = "HOLD"
-
-
 class PTDBLNPOPM_OT_anim_action(bpy.types.Operator):
-    bl_label = "Add Animation Action"
+    bl_label = "Animation"
     bl_idname = "ptdblnpopm.anim_action"
     bl_description = "new track - compile animation action"
     bl_options = {"REGISTER", "INTERNAL", "UNDO"}
@@ -1879,8 +1538,10 @@ class PTDBLNPOPM_OT_anim_action(bpy.types.Operator):
         pool = context.scene.ptdblnpopm_pool
         pool.update_ok = False
 
+        # ------------------ action evaluation -------------------#
+
         try:
-            if not pool.pop_anim_state():
+            if not pool.pop_anim_state_eval():
                 raise Exception("no animation values!")
         except Exception as my_err:
             pool.update_ok = True
@@ -1888,7 +1549,8 @@ class PTDBLNPOPM_OT_anim_action(bpy.types.Operator):
             self.report({"INFO"}, f"{my_err.args}")
             return {"CANCELLED"}
 
-        ob = pool.pop_mesh
+        # ---------------------- shortcuts -----------------------#
+
         loop = pool.ani_kf_loop
         path = pool.path
         prof = pool.prof
@@ -1897,81 +1559,40 @@ class PTDBLNPOPM_OT_anim_action(bpy.types.Operator):
         profrot = pool.profrot
         noiz = pool.noiz
 
+        # ----------------- interpolation Lists ------------------#
+
         try:
             path_flag = path.anim_state()
             if path_flag:
-                path_d = aniact_path_edit_dict(path, loop)
+                path_d = ModFNOP.aniact_path_edit_dict(path, loop)
             prof_flag = prof.anim_state()
             if prof_flag:
-                prof_d = aniact_prof_edit_dict(prof, loop)
-            if meshrot.anim_state():
-                meshrot_angs = aniact_rotation_list(
-                    meshrot.ani_rot.fac, meshrot.ani_rot.beg, meshrot.ani_rot.end, loop
-                )
-            if pathrot.anim_state():
-                pathrot_angs = aniact_rotation_list(
-                    pathrot.ani_rot.fac, pathrot.ani_rot.beg, pathrot.ani_rot.end, loop
-                )
-            if profrot.anim_state():
-                profrot_angs = aniact_rotation_list(
-                    profrot.ani_rot.fac, profrot.ani_rot.beg, profrot.ani_rot.end, loop
-                )
-            pathloc_d = {"dcts": [], "nids": [], "ams": []}
-            for item in pool.pathloc:
-                if item.active:
-                    pathloc_d["dcts"].append(item.to_dct())
-                    pathloc_d["nids"].append(
-                        ModPOP.aniact_index_offset_list(
-                            item.ani_nidx, item.nprams.idx, loop
-                        )
-                    )
-                    pathloc_d["ams"].append(aniact_plocval_list(item, loop))
-            blnd_d = {"dcts": [], "nids": [], "ams": [], "ids": []}
-            for item in pool.blnd:
-                if item.active:
-                    blnd_d["dcts"].append(item.to_dct())
-                    blnd_d["nids"].append(
-                        ModPOP.aniact_index_offset_list(
-                            item.ani_nidx, item.nprams.idx, loop
-                        )
-                    )
-                    blnd_d["ams"].append(aniact_blndval_list(item, loop))
-                    blnd_d["ids"].append(
-                        ModPOP.aniact_index_offset_list(
-                            item.ani_idx, item.iprams.idx, loop
-                        )
-                    )
-            profloc_d = {"dcts": [], "nids": [], "ams": [], "ids": []}
-            for item in pool.profloc:
-                if item.active:
-                    profloc_d["dcts"].append(item.to_dct())
-                    profloc_d["nids"].append(
-                        ModPOP.aniact_index_offset_list(
-                            item.ani_nidx, item.nprams.idx, loop
-                        )
-                    )
-                    profloc_d["ams"].append(aniact_plocval_list(item, loop))
-                    profloc_d["ids"].append(
-                        ModPOP.aniact_index_offset_list(
-                            item.ani_idx, item.iprams.idx, loop
-                        )
-                    )
+                prof_d = ModFNOP.aniact_prof_edit_dict(prof, loop)
+            if meshrot.active and meshrot.anim_state():
+                meshrot_angs = ModFNOP.aniact_rotation_list(meshrot.ani_rot, loop)
+            if pathrot.active and pathrot.anim_state():
+                pathrot_angs = ModFNOP.aniact_rotation_list(pathrot.ani_rot, loop)
+            if profrot.active and profrot.anim_state():
+                profrot_angs = ModFNOP.aniact_rotation_list(profrot.ani_rot, loop)
+            pathloc_d = ModFNOP.aniact_edvals_dict(pool.pathloc, loop, twodim=False)
+            blnd_d = ModFNOP.aniact_blendvals_dict(pool.blnd, loop)
+            profloc_d = ModFNOP.aniact_edvals_dict(pool.profloc, loop, twodim=True)
             if noiz.active:
-                noiz_d = {"seed": noiz.nseed}
-                if noiz.anim_state() and noiz.ani_seed:
-                    noiz_d["seed"] = None
-                noiz_d["ampli"] = aniact_noiz_list(noiz, loop)
+                nsd = None if (noiz.anim_state() and noiz.ani_seed) else noiz.nseed
+                noiz_d = {"seed": nsd, "ampli": ModFNOP.aniact_noiz_list(noiz, loop)}
         except Exception as my_err:
             pool.update_ok = True
             print(f"anim_action (lrplst): {my_err.args}")
             self.report({"INFO"}, f"{my_err.args}")
             return {"CANCELLED"}
 
+        # --------------- animation loop updates -----------------#
+
         sindz = pool.rngs.sindz_get()
         sindz_on = pool.rngs.active
         nlocs = path.pathed.npts * prof.profed.npts
         try:
-            pop = ModPOP.new_pop_instance(pool)
+            pop = ModPOPM.new_pop_instance(pool)
             if meshrot.active:
                 pop.mesh_rotate(meshrot.axis, meshrot.angle, meshrot.pivot)
             if pathrot.active:
@@ -2025,7 +1646,7 @@ class PTDBLNPOPM_OT_anim_action(bpy.types.Operator):
                     pop.roll_anim_angle(profrot_angs[i])
                 locs = pop.get_locs()
                 if noiz.active:
-                    locs = ModPOP.noiz_locs(
+                    locs = ModPOPM.noiz_locs(
                         locs, noiz.vfac, noiz_d["ampli"][i], noiz_d["seed"]
                     )
                 if sindz_on:
@@ -2037,24 +1658,27 @@ class PTDBLNPOPM_OT_anim_action(bpy.types.Operator):
             self.report({"INFO"}, f"{my_err.args}")
             return {"CANCELLED"}
 
+        # ---------------- action fcurves loop -------------------#
+
         a_name = pool.act_name
         k_beg = pool.ani_kf_start
         k_stp = pool.ani_kf_step
-        k_lrp = int(pool.ani_kf_type)
-        fl = [k_beg + i * k_stp for i in range(loop)]
+        kls = [int(pool.ani_kf_type)] * loop
+        fls = [k_beg + i * k_stp for i in range(loop)]
         try:
+            popme = pool.pop_mesh.data
+            active_locs = len(popme.vertices)
             trk = pool.trax.add()
             action = bpy.data.actions.new(a_name)
-            nvs = len(ob.data.vertices)
-            for p in range(nvs):
+            for p in range(active_locs):
                 dp = f"vertices[{p}].co"
                 for di in range(3):
-                    vl = [kloc[k][p][di] for k in range(loop)]
-                    aniact_fcurve_create(action, dp, di, fl, vl, k_lrp)
-            aniact_nla_track_add(ob.data, action)
+                    vls = [kloc[k][p][di] for k in range(loop)]
+                    ModFNOP.aniact_fcurve_create(action, dp, di, fls, vls, kls, loop)
+            ModFNOP.aniact_nla_track_add(popme, action)
             trk.name = a_name
             trk.t_name = action.name
-            k_end = fl[-1]
+            k_end = fls[-1]
             trk.ac_beg = k_beg
             trk.ac_end = k_end
             trk.sa_beg = k_beg
@@ -2080,6 +1704,7 @@ class PTDBLNPOPM_OT_anim_action(bpy.types.Operator):
 
 classes = (
     PTDBLNPOPM_OT_pop_simple_update,
+    PTDBLNPOPM_OT_facerange_react,
     PTDBLNPOPM_OT_pop_reset,
     PTDBLNPOPM_OT_setup_provider,
     PTDBLNPOPM_OT_update_preset,

@@ -28,10 +28,10 @@ import bpy
 
 # ------------------------------------------------------------------------------
 #
-# ---------------------------- USER INTERFACE ----------------------------------
+# ------------------------------- BMUIL ----------------------------------------
 
 
-# ---- USER LIST TEMPLATES
+# ---- USER LISTS
 
 
 class PTDBLNPOPM_UL_pathloc(bpy.types.UIList):
@@ -255,7 +255,7 @@ class PTDBLNPOPM_PT_ui_setup(PTDBLNPOPM_PT_ui, bpy.types.Panel):
         rc.prop(pool, "show_warn", toggle=True)
 
 
-class PTDBLNPOPM_PT_ui_path_edit(PTDBLNPOPM_PT_ui, bpy.types.Panel):
+class PTDBLNPOPM_PT_ui_path(PTDBLNPOPM_PT_ui, bpy.types.Panel):
     bl_label = "Path"
 
     def draw(self, context):
@@ -308,7 +308,7 @@ class PTDBLNPOPM_PT_ui_path_edit(PTDBLNPOPM_PT_ui, bpy.types.Panel):
 
 class PTDBLNPOPM_PT_ui_path_anim(PTDBLNPOPM_PT_ui, bpy.types.Panel):
     bl_label = "animation options"
-    bl_parent_id = "PTDBLNPOPM_PT_ui_path_edit"
+    bl_parent_id = "PTDBLNPOPM_PT_ui_path"
 
     def draw(self, context):
         scene = context.scene
@@ -437,7 +437,7 @@ class PTDBLNPOPM_PT_ui_pathrot(PTDBLNPOPM_PT_ui, bpy.types.Panel):
         anim_rot_tmpl(c, pathrot.ani_rot, "rotate")
 
 
-class PTDBLNPOPM_PT_ui_pathlocs(PTDBLNPOPM_PT_ui, bpy.types.Panel):
+class PTDBLNPOPM_PT_ui_pathloc(PTDBLNPOPM_PT_ui, bpy.types.Panel):
     bl_label = "Path Locations"
 
     def draw(self, context):
@@ -460,9 +460,9 @@ class PTDBLNPOPM_PT_ui_pathlocs(PTDBLNPOPM_PT_ui, bpy.types.Panel):
             row.operator("ptdblnpopm.pathloc_edit", text="Edit")
 
 
-class PTDBLNPOPM_PT_ui_pathlocs_anim(PTDBLNPOPM_PT_ui, bpy.types.Panel):
+class PTDBLNPOPM_PT_ui_pathloc_anim(PTDBLNPOPM_PT_ui, bpy.types.Panel):
     bl_label = "animation options"
-    bl_parent_id = "PTDBLNPOPM_PT_ui_pathlocs"
+    bl_parent_id = "PTDBLNPOPM_PT_ui_pathloc"
 
     def draw(self, context):
         scene = context.scene
@@ -482,7 +482,7 @@ class PTDBLNPOPM_PT_ui_pathlocs_anim(PTDBLNPOPM_PT_ui, bpy.types.Panel):
             c.label(text="no selection")
 
 
-class PTDBLNPOPM_PT_ui_prof_edit(PTDBLNPOPM_PT_ui, bpy.types.Panel):
+class PTDBLNPOPM_PT_ui_prof(PTDBLNPOPM_PT_ui, bpy.types.Panel):
     bl_label = "Profile"
 
     def draw(self, context):
@@ -525,7 +525,7 @@ class PTDBLNPOPM_PT_ui_prof_edit(PTDBLNPOPM_PT_ui, bpy.types.Panel):
 
 class PTDBLNPOPM_PT_ui_prof_anim(PTDBLNPOPM_PT_ui, bpy.types.Panel):
     bl_label = "animation options"
-    bl_parent_id = "PTDBLNPOPM_PT_ui_prof_edit"
+    bl_parent_id = "PTDBLNPOPM_PT_ui_prof"
 
     def draw(self, context):
         scene = context.scene
@@ -599,7 +599,7 @@ class PTDBLNPOPM_PT_ui_prof_anim(PTDBLNPOPM_PT_ui, bpy.types.Panel):
                 anim_fac_mirror_tmpl(c, prof.ani_fac3, prof.ani_fac3_mirror)
 
 
-class PTDBLNPOPM_PT_ui_blends(PTDBLNPOPM_PT_ui, bpy.types.Panel):
+class PTDBLNPOPM_PT_ui_blnd(PTDBLNPOPM_PT_ui, bpy.types.Panel):
     bl_label = "Blends"
 
     def draw(self, context):
@@ -676,9 +676,9 @@ class PTDBLNPOPM_PT_ui_blends(PTDBLNPOPM_PT_ui, bpy.types.Panel):
             row.operator("ptdblnpopm.blnd_edit", text="Edit")
 
 
-class PTDBLNPOPM_PT_ui_blends_anim(PTDBLNPOPM_PT_ui, bpy.types.Panel):
+class PTDBLNPOPM_PT_ui_blnd_anim(PTDBLNPOPM_PT_ui, bpy.types.Panel):
     bl_label = "animation options"
-    bl_parent_id = "PTDBLNPOPM_PT_ui_blends"
+    bl_parent_id = "PTDBLNPOPM_PT_ui_blnd"
 
     def draw(self, context):
         scene = context.scene
@@ -733,7 +733,7 @@ class PTDBLNPOPM_PT_ui_profrot(PTDBLNPOPM_PT_ui, bpy.types.Panel):
         anim_rot_tmpl(c, profrot.ani_rot, "roll")
 
 
-class PTDBLNPOPM_PT_ui_proflocs(PTDBLNPOPM_PT_ui, bpy.types.Panel):
+class PTDBLNPOPM_PT_ui_profloc(PTDBLNPOPM_PT_ui, bpy.types.Panel):
     bl_label = "Profile Locations"
 
     def draw(self, context):
@@ -756,9 +756,9 @@ class PTDBLNPOPM_PT_ui_proflocs(PTDBLNPOPM_PT_ui, bpy.types.Panel):
             row.operator("ptdblnpopm.profloc_edit", text="Edit")
 
 
-class PTDBLNPOPM_PT_ui_proflocs_anim(PTDBLNPOPM_PT_ui, bpy.types.Panel):
+class PTDBLNPOPM_PT_ui_profloc_anim(PTDBLNPOPM_PT_ui, bpy.types.Panel):
     bl_label = "animation options"
-    bl_parent_id = "PTDBLNPOPM_PT_ui_proflocs"
+    bl_parent_id = "PTDBLNPOPM_PT_ui_profloc"
 
     def draw(self, context):
         scene = context.scene
@@ -859,13 +859,14 @@ class PTDBLNPOPM_PT_ui_ranges(PTDBLNPOPM_PT_ui, bpy.types.Panel):
         bcol = box.column()
         row = bcol.row(align=True)
         col = row.column(align=True)
-        col.prop(rngs, "active", toggle=True)
+        range_on = rngs.active
+        cap = "Disable" if range_on else "Enable"
+        col.operator("ptdblnpopm.facerange_react", text=cap).active = range_on
         col = row.column(align=True)
-        col.enabled = rngs.active
+        col.enabled = range_on
         col.prop(rngs, "invert", toggle=True)
-        row = bcol.row(align=True)
-        row.enabled = rngs.active
-        col = row.column(align=True)
+        col = bcol.column(align=True)
+        col.enabled = range_on
         row = col.row(align=True)
         row.prop(rngs, "rbeg", text="")
         row.prop(rngs, "pbeg", text="")
@@ -879,7 +880,7 @@ class PTDBLNPOPM_PT_ui_ranges(PTDBLNPOPM_PT_ui, bpy.types.Panel):
         row.prop(rngs, "rstp", text="")
         row.prop(rngs, "pstp", text="")
         row = bcol.row(align=True)
-        row.enabled = rngs.active
+        row.enabled = range_on
         col = row.column(align=True)
         col.prop(rngs, "rndsel", toggle=True)
         col = row.column(align=True)
@@ -1027,23 +1028,24 @@ class PTDBLNPOPM_PT_ui_animode(PTDBLNPOPM_PT_ui, bpy.types.Panel):
 #
 # --------------------------- REGISTRATION -------------------------------------
 
+
 classes = (
     PTDBLNPOPM_UL_pathloc,
     PTDBLNPOPM_UL_profloc,
     PTDBLNPOPM_UL_blnd,
     PTDBLNPOPM_UL_trax,
     PTDBLNPOPM_PT_ui_setup,
-    PTDBLNPOPM_PT_ui_path_edit,
+    PTDBLNPOPM_PT_ui_path,
     PTDBLNPOPM_PT_ui_path_anim,
-    PTDBLNPOPM_PT_ui_pathlocs,
-    PTDBLNPOPM_PT_ui_pathlocs_anim,
+    PTDBLNPOPM_PT_ui_pathloc,
+    PTDBLNPOPM_PT_ui_pathloc_anim,
     PTDBLNPOPM_PT_ui_pathrot,
-    PTDBLNPOPM_PT_ui_prof_edit,
+    PTDBLNPOPM_PT_ui_prof,
     PTDBLNPOPM_PT_ui_prof_anim,
-    PTDBLNPOPM_PT_ui_blends,
-    PTDBLNPOPM_PT_ui_blends_anim,
-    PTDBLNPOPM_PT_ui_proflocs,
-    PTDBLNPOPM_PT_ui_proflocs_anim,
+    PTDBLNPOPM_PT_ui_blnd,
+    PTDBLNPOPM_PT_ui_blnd_anim,
+    PTDBLNPOPM_PT_ui_profloc,
+    PTDBLNPOPM_PT_ui_profloc_anim,
     PTDBLNPOPM_PT_ui_profrot,
     PTDBLNPOPM_PT_ui_noiz,
     PTDBLNPOPM_PT_ui_meshrot,

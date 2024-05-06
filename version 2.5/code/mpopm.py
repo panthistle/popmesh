@@ -72,58 +72,11 @@ def user_mesh_verts(me):
 
 # ------------------------------------------------------------------------------
 #
-# --------------------- RANDOM INDEX ANIMATION UPDATES -------------------------
-
-
-def aniact_index_offset_list(inst, idx, loop):
-    def anim_ids(base, inc, beg, stp, loop):
-        beg = min(loop, beg)
-        ids = [base] * beg
-        if loop > beg:
-            d = loop - beg
-            base += inc
-            ct = 0
-            for i in range(d):
-                ids.append(base)
-                ct += 1
-                if ct == stp:
-                    base += inc
-                    ct = 0
-        return ids
-
-    def anim_ids_rnd(base, inc, beg, stp, rndseed, loop):
-        beg = min(loop, beg)
-        ids = [base] * beg
-        if loop > beg:
-            d = loop - beg
-            seed(rndseed)
-            val = randint(base - inc, base + inc)
-            ct = 0
-            for i in range(d - 1):
-                ids.append(val)
-                ct += 1
-                if ct == stp:
-                    val = randint(base - inc, base + inc)
-                    ct = 0
-            ids.append(base)
-        return ids
-
-    if not inst.active:
-        return [idx] * loop
-    if inst.offrnd:
-        return anim_ids_rnd(idx, inst.offset, inst.beg, inst.stp, inst.offrndseed, loop)
-    return anim_ids(idx, inst.offset, inst.beg, inst.stp, loop)
-
-
-# ------------------------------------------------------------------------------
-#
 # ------------------------- SCENE UPDATES --------------------------------------
 
 
 def noiz_locs(locs, axis, amp, ns):
-    if not amp:
-        return locs
-    val = sum(1 if i else 0 for i in axis)
+    val = sum(1 if i else 0 for i in axis) * amp
     if not val:
         return locs
     seed(ns)

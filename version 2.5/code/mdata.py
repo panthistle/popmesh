@@ -135,7 +135,7 @@ def gfaces(pts, lines, scan):
 
 # ------------------------------------------------------------------------------
 #
-# ---------------------------- POPEX CLASS -------------------------------------
+# ----------------------------- POPEX CLASS ------------------------------------
 
 
 class PopEx:
@@ -144,18 +144,18 @@ class PopEx:
     _tau = 2 * math.pi
     _hpi = 0.5 * math.pi
     _eps = 1e-5
+    _zax = Vector((0, 0, 1))
+
+    # INITIALIZE
 
     def __init__(self, pool_dct, path_dct, prof_dct):
         self._meshrot_active = pool_dct["meshrot_active"]
         self._pathrot_active = pool_dct["pathrot_active"]
         self._twistang = pool_dct["twistang"]
         self._follow_limit = pool_dct["follow_limit"]
-        self._z_axis = Vector((0, 0, 1))
         self.reset_edlocs()
         self._set_path(path_dct)
         self._set_profile(prof_dct)
-
-    # INITIALIZE
 
     def reset_edlocs(self):
         self._pedlocs = []
@@ -168,35 +168,37 @@ class PopEx:
         self._pathupfixed = dct["upfixed"]
         self._pathupaxis = dct["upaxis"]
         self._pathlocs = self._path.get_locs()
+        self._rings = self._path.npts
 
     def _set_profile(self, dct):
         self._profile = getattr(ModPATH, dct["provider"].capitalize())(dct)
         self._profclosed = dct["closed"]
         self._proflocs = self._profile.get_locs()
         self._profrots = []
+        self._rpts = self._profile.npts
+        self._items = self._rings * self._rpts
 
     # MODIFY
 
     def _poplocs_get(self):
-        return [[loc.copy() for loc in self._proflocs] for _ in range(self._path.npts)]
+        return [[loc.copy() for loc in self._proflocs] for _ in range(self._rings)]
 
     def prof_blend(self, dct):
         if not dct["fac"]:
             return
         provider = dct["provider"]
-        rpts = self._profile.npts
-        dct[f"res_{provider[:3]}"] = rpts
+        dct[f"res_{provider[:3]}"] = self._rpts
         bln_prof = getattr(ModPATH, provider.capitalize())(dct)
         blocs = bln_prof.get_locs()
-        k = dct["idx"] % rpts
+        k = dct["idx"] % self._rpts
         blocs = blocs[k:] + blocs[:k]
         if dct["rot_align"]:
-            q = Quaternion(self._z_axis, dct["rot_align"])
+            q = Quaternion(self._zax, dct["rot_align"])
             blocs = [q @ loc for loc in blocs]
         if not self._poplocs:
             self._poplocs = self._poplocs_get()
-        nids, nfvs = falloff_lists(self._path.npts, dct["nprams"])
-        ids, fvs = falloff_lists(rpts, dct["iprams"])
+        nids, nfvs = falloff_lists(self._rings, dct["nprams"])
+        ids, fvs = falloff_lists(self._rpts, dct["iprams"])
         fac = dct["fac"]
         for i, f in zip(nids, nfvs):
             if f:
@@ -219,27 +221,22 @@ class PopEx:
         self._pathrot = Quaternion(axis, angle)
 
     def prof_rotate(self, roll):
-        rings = self._path.npts
-        twist = self._twistang
-        axis = self._z_axis
-        if not twist:
-            self._profrots = [Quaternion(axis, roll)] * rings
+        axis = self._zax
+        if not self._twistang:
+            self._profrots = [Quaternion(axis, roll)] * self._rings
             return
-        div = rings if self._pathclosed else rings - 1
-        dt = twist / div
-        self._profrots = [Quaternion(axis, roll + dt * i) for i in range(rings)]
+        div = self._rings if self._pathclosed else self._rings - 1
+        dt = self._twistang / div
+        self._profrots = [Quaternion(axis, roll + dt * i) for i in range(self._rings)]
 
     def path_locations(self, dct):
-        fac = dct["fac"]
-        if not fac:
+        val = sum(1 if i else 0 for i in dct["axis"]) * dct["fac"]
+        if not val:
             return
-        axis = dct["axis"]
-        if not (axis[0] or axis[1] or axis[2]):
-            return
-        axis = Vector(axis) * fac
+        axis = Vector(dct["axis"]) * dct["fac"]
         if not self._pedlocs:
             self._pedlocs = [loc.copy() for loc in self._pathlocs]
-        nids, nfvs = falloff_lists(self._path.npts, dct["nprams"])
+        nids, nfvs = falloff_lists(self._rings, dct["nprams"])
         if dct["abs_move"]:
             for i, f in zip(nids, nfvs):
                 if f:
@@ -252,19 +249,14 @@ class PopEx:
                         self._pedlocs[i][j] += dv[j] * axis[j] * f
 
     def prof_locations(self, dct):
-        fac = dct["fac"]
-        if not fac:
+        val = sum(1 if i else 0 for i in dct["axis"]) * dct["fac"]
+        if not val:
             return
-        axis = dct["axis"]
-        if not (axis[0] or axis[1] or axis[2]):
-            return
-        axis = Vector(axis) * fac
+        axis = Vector(dct["axis"]) * dct["fac"]
         if not self._poplocs:
             self._poplocs = self._poplocs_get()
-        rings = self._path.npts
-        rpts = self._profile.npts
-        nids, nfvs = falloff_lists(rings, dct["nprams"])
-        ids, fvs = falloff_lists(rpts, dct["iprams"])
+        nids, nfvs = falloff_lists(self._rings, dct["nprams"])
+        ids, fvs = falloff_lists(self._rpts, dct["iprams"])
         if dct["abs_move"]:
             for i, f in zip(nids, nfvs):
                 if f:
@@ -285,36 +277,36 @@ class PopEx:
 
     @property
     def rings(self):
-        return self._path.npts
+        return self._rings
 
     @property
     def rpts(self):
-        return self._profile.npts
+        return self._rpts
 
     def _path_locs_rots(self):
         if not self._pedlocs:
             self._pedlocs = self._pathlocs
-        dv = self._pathupaxis if self._pathupfixed else self._z_axis
+        dv = self._pathupaxis if self._pathupfixed else self._zax
         if not self._pathrot_active:
             rots = path_attitude_rots(self._pedlocs, dv, self._pathclosed)
             return self._pedlocs, rots
         if self._pathpivot_object:
-            p = sum(self._pedlocs, Vector()) / self._path.npts
+            piv = sum(self._pedlocs, Vector()) / self._rings
         else:
-            p = self._pathpivot
+            piv = self._pathpivot
         if self._pathrot_batt:
-            self._pedlocs = [self._pathrot @ (v - p) + p for v in self._pedlocs]
+            self._pedlocs = [self._pathrot @ (v - piv) + piv for v in self._pedlocs]
             rots = path_attitude_rots(self._pedlocs, dv, self._pathclosed)
             return self._pedlocs, rots
         rots = path_attitude_rots(self._pedlocs, dv, self._pathclosed)
-        self._pedlocs = [self._pathrot @ (v - p) + p for v in self._pedlocs]
+        self._pedlocs = [self._pathrot @ (v - piv) + piv for v in self._pedlocs]
         rots = [self._pathrot @ q for q in rots]
         return self._pedlocs, rots
 
     def get_locs(self):
         pa_l, pa_r = self._path_locs_rots()
         if not self._poplocs:
-            self._poplocs = [self._proflocs] * self._path.npts
+            self._poplocs = [self._proflocs] * self._rings
         if self._profrots:
             self._poplocs = [
                 q @ s @ p + v
@@ -326,49 +318,51 @@ class PopEx:
                 q @ p + v for q, v, lst in zip(pa_r, pa_l, self._poplocs) for p in lst
             ]
         if self._meshrot_active:
-            p = self._meshpivot
-            return [self._meshrot @ (v - p) + p for v in self._poplocs]
+            piv = self._meshpivot
+            return [self._meshrot @ (v - piv) + piv for v in self._poplocs]
         return self._poplocs
 
     def get_faces(self):
-        rings = self._path.npts
-        rpts = self._profile.npts
         prof_closed = self._profclosed
         follow_limit = self._follow_limit
         if prof_closed:
-            scan = gscan_cl(rpts, rings)
-            pts = rpts + 1
+            scan = gscan_cl(self._rpts, self._rings)
+            pts = self._rpts + 1
             follow_limit = True
         else:
-            scan = tuple(range(rpts * rings))
-            pts = rpts
+            scan = tuple(range(self._items))
+            pts = self._rpts
         if self._pathclosed:
-            cfl = tuple(range(rpts))
+            cfl = tuple(range(self._rpts))
             limit = 0
-            da = self._twistang % PopEx._tau
+            da = self._twistang % self._tau
             if follow_limit:
-                if da > PopEx._eps:
-                    dt = PopEx._tau / rpts
-                    for i in range(rpts):
-                        val = dt * i + PopEx._eps
+                if da > self._eps:
+                    dt = self._tau / self._rpts
+                    for i in range(self._rpts):
+                        val = dt * i + self._eps
                         if val > da:
                             limit = i
                             break
                     cfl = cfl[limit:] + cfl[:limit]
             else:
-                if PopEx._hpi <= da < 3 * PopEx._hpi:
+                if self._hpi <= da < 3 * self._hpi:
                     cfl = cfl[::-1]
             if prof_closed:
                 cfl += (limit,)
             scan += cfl
-            return gfaces(pts, rings + 1, scan)
-        faces = gfaces(pts, rings, scan)
+            return gfaces(pts, self._rings + 1, scan)
+        faces = gfaces(pts, self._rings, scan)
         if self._endcaps:
-            npts = rpts * rings
-            faces.extend([tuple(range(rpts))[::-1], tuple(range(npts - rpts, npts))])
+            faces.extend(
+                [
+                    tuple(range(self._rpts))[::-1],
+                    tuple(range(self._items - self._rpts, self._items)),
+                ]
+            )
         return faces
 
-    # ANIMATION
+    # ANIMATION EXTRAS
 
     def path_anim_update(self, *args):
         self._path.anim_update(*args)
@@ -385,5 +379,5 @@ class PopEx:
         self._pathrot @= Quaternion(self._pathaxis, angle)
 
     def roll_anim_angle(self, angle):
-        q = Quaternion(self._z_axis, angle)
+        q = Quaternion(self._zax, angle)
         self._profrots = [rot @ q for rot in self._profrots]

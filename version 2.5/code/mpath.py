@@ -53,14 +53,11 @@ def itexpo_in(t, p, m):
 
 def itexpo_in_out(t, p, m):
     if m:
-        # safe because t in [0, 1] and p > 0
         return math.sin(t * math.pi) ** p
     return (2 * t) ** p / 2 if t < 0.5 else 1 - ((2 - 2 * t) ** p / 2)
 
 
 def it_list(ease, dt, p, m, count):
-    # 0.0 < dt < 1.0 , 0.2 <= p <= 5.0
-
     if ease == "LINEAR":
         return [itlinear(i * dt, m) for i in range(count)]
     if ease == "OUT":
@@ -123,13 +120,7 @@ class Wave:
         dtx = -self.dim / segs
         dty = self.frq * 2 * math.pi / segs
         return [
-            Vector(
-                (
-                    start + dtx * i,
-                    self.amp * math.sin(dty * i + self.pha),
-                    0,
-                )
-            )
+            Vector((start + dtx * i, self.amp * math.sin(dty * i + self.pha), 0))
             for i in range(npts)
         ]
 
@@ -166,8 +157,8 @@ class Arc:
         if r < sp:
             theta = 2 * math.pi - theta
         dt = theta / (npts - 1)
-        z = 1 if w < 0 else -1
-        locs = [Quaternion((0, 0, z), dt * i) @ a + c for i in range(npts)]
+        axis = (0, 0, 1) if w < 0 else (0, 0, -1)
+        locs = [Quaternion(axis, dt * i) @ a + c for i in range(npts)]
         if s > 0:
             for i, loc in enumerate(locs):
                 locs[i][1] -= 2 * loc[1]
@@ -353,7 +344,7 @@ class Helix:
         rad = (self.dim[0] / 2, self.dim[1] / 2)
         dif = (rad[0] * self.fac - rad[0], rad[1] * self.fac - rad[1])
         rls = it_list(self.ease, dt, self.exp, self.mir, npts)
-        if self.invert:
+        if self.invert and not self.mir:
             rls.reverse()
         dt *= 2 * math.pi * self.steps
         tls = [self.pha + dt * i for i in range(npts)]
