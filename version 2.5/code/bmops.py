@@ -1568,11 +1568,14 @@ class PTDBLNPOPM_OT_anim_action(bpy.types.Operator):
             prof_flag = prof.anim_state()
             if prof_flag:
                 prof_d = ModFNOP.aniact_prof_edit_dict(prof, loop)
-            if meshrot.active and meshrot.anim_state():
+            meshrot_play = meshrot.active and meshrot.anim_state()
+            if meshrot_play:
                 meshrot_angs = ModFNOP.aniact_rotation_list(meshrot.ani_rot, loop)
-            if pathrot.active and pathrot.anim_state():
+            pathrot_play = pathrot.active and pathrot.anim_state()
+            if pathrot_play:
                 pathrot_angs = ModFNOP.aniact_rotation_list(pathrot.ani_rot, loop)
-            if profrot.active and profrot.anim_state():
+            profrot_play = profrot.active and profrot.anim_state()
+            if profrot_play:
                 profrot_angs = ModFNOP.aniact_rotation_list(profrot.ani_rot, loop)
             pathloc_d = ModFNOP.aniact_edvals_dict(pool.pathloc, loop, twodim=False)
             blnd_d = ModFNOP.aniact_blendvals_dict(pool.blnd, loop)
@@ -1638,11 +1641,11 @@ class PTDBLNPOPM_OT_anim_action(bpy.types.Operator):
                     dct["fac"] = ams[i]
                     dct["iprams"]["idx"] = ids[i]
                     pop.prof_locations(dct)
-                if meshrot.anim_state():
+                if meshrot_play:
                     pop.meshrot_anim_angle(meshrot_angs[i])
-                if pathrot.anim_state():
+                if pathrot_play:
                     pop.pathrot_anim_angle(pathrot_angs[i])
-                if profrot.anim_state():
+                if profrot_play:
                     pop.roll_anim_angle(profrot_angs[i])
                 locs = pop.get_locs()
                 if noiz.active:
