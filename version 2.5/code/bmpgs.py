@@ -1303,16 +1303,10 @@ class PTDBLNPOPM_noiz(bpy.types.PropertyGroup):
     ampli: bpy.props.FloatProperty(default=0)
     vfac: bpy.props.FloatVectorProperty(size=3, default=(0, 0, 0))
     nseed: bpy.props.IntProperty(default=0)
-
-    def noiz_aninoiz_update(self, context):
-        if not self.ani_noiz:
-            self.ani_seed = False
-
     ani_noiz: bpy.props.BoolProperty(
         name="noise",
         description="animate noise",
         default=False,
-        update=noiz_aninoiz_update,
         options={"HIDDEN"},
     )
     ani_seed: bpy.props.BoolProperty(
