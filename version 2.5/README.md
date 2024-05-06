@@ -1,7 +1,7 @@
 ### About
 
 Mesh generator/animator add-on for Blender.  Tested on Blender 3.6 LTS.  
-Latest update: 01-April-2024
+Latest update: 06-May-2024
 
 
 ### Download and Install
@@ -12,7 +12,7 @@ To download the add-on:
 
 To install the add-on in Blender:
 - Start Blender and open the 'Preferences' window from the 'Edit' menu.  Select the 'Add-ons' tab.
-- If you have installed a previous version of PopMesh, disable and remove it before installing this version.
+- If you have installed a previous version/update of PopMesh, disable and remove it before installing this version.
 - Click 'Install...', find and select the downloaded 'PTDBLNPOPM.zip' file, then click 'Install Add-on'.
 - Enable the add-on by ticking the checkbox next to its name.
 
