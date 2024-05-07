@@ -904,18 +904,16 @@ class PTDBLNPOPM_PT_ui_anicalc(PTDBLNPOPM_PT_ui, bpy.types.Panel):
         row = bcol.row(align=True)
         col = row.column(align=True)
         caller = clc.calc_type
+        row = col.row(align=True)
         if caller == "loop":
-            row = col.row(align=True)
             row.prop(clc, "items", text="")
             row.prop(clc, "offset", text="")
             row = col.row(align=True)
             row.prop(clc, "start", text="")
             row.prop(clc, "step", text="")
         elif caller == "offsets":
-            row = col.row(align=True)
             row.prop(clc, "items", text="")
         else:
-            row = col.row(align=True)
             row.prop(clc, "loop", text="")
         row = col.row(align=True)
         row.prop(clc, "info", text="")

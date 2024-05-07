@@ -1153,8 +1153,8 @@ class PTDBLNPOPM_OT_anicalc(bpy.types.Operator):
             else:
                 loop = clc.loop
                 if not loop % 2:
-                    raise Exception("loop must be odd, positive integer!")
-                hlp = (loop - 1) // 2
+                    self.report({"INFO"}, "loop should be odd, positive integer!")
+                hlp = loop // 2
                 cycles = sorted(ModFNOP.anicalc_factors(hlp))
                 clc.info = ", ".join(str(i) for i in cycles)
         except Exception as my_err:

@@ -1519,11 +1519,20 @@ class PTDBLNPOPM_anicalc(bpy.types.PropertyGroup):
         min=3,
         options={"HIDDEN"},
     )
+
+    def anicalc_offset_get(self):
+        return self.get("offset", 1)
+
+    def anicalc_offset_set(self, value):
+        den = self.get("items", 3) - 1
+        self["offset"] = max(1, value % den)
+
     offset: bpy.props.IntProperty(
         name="offset",
         description="index offset",
         default=1,
-        min=1,
+        get=anicalc_offset_get,
+        set=anicalc_offset_set,
         options={"HIDDEN"},
     )
     start: bpy.props.IntProperty(
