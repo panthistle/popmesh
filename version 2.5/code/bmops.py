@@ -1177,10 +1177,11 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
     def track_update(self, context):
         if self.update_pause:
             return None
-        fval = (self.sa_end - self.sa_beg) * self.s_sca * self.s_rep
+        reps = 1 if self.st_warp else self.s_rep
+        fval = (self.sa_end - self.sa_beg) * self.s_sca * reps
         self.s_end = self.s_beg + int(fval)
-        if not self.s_blendauto:
-            self.s_blendin = self.s_blendin
+        if not self.s_blauto:
+            self.s_blin = self.s_blin
 
     def track_sa_beg_get(self):
         return self.get("sa_beg", 1)
@@ -1201,30 +1202,41 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
         self["sa_end"] = val
 
     def track_s_blin_get(self):
-        return self.get("s_blendin", 0)
+        return self.get("s_blin", 0)
 
     def track_s_blin_set(self, value):
         frms = self.s_end - self.s_beg
-        self["s_blendin"] = min(max(0, value), frms)
+        self["s_blin"] = min(max(0, value), frms)
 
     def track_s_blin_update(self, context):
-        self.s_blendout = self.get("s_blendout", 0)
+        self.s_blout = self.get("s_blout", 0)
 
     def track_s_blout_get(self):
-        return self.get("s_blendout", 0)
+        return self.get("s_blout", 0)
 
     def track_s_blout_set(self, value):
-        frms = (self.s_end - self.s_beg) - self.s_blendin
-        self["s_blendout"] = min(max(0, value), frms)
-
-    def track_blauto_update(self, context):
-        if self.s_blendauto:
-            self.s_blendin = 0
-            self.s_blendout = 0
+        frms = (self.s_end - self.s_beg) - self.s_blin
+        self["s_blout"] = min(max(0, value), frms)
 
     update_pause: bpy.props.BoolProperty(default=True)
     ac_beg: bpy.props.IntProperty(default=1)
     ac_end: bpy.props.IntProperty(default=1)
+    s_sca: bpy.props.FloatProperty(
+        name="scale",
+        description="time scaling factor",
+        default=1,
+        min=0.001,
+        max=100,
+        update=track_update,
+    )
+    s_rep: bpy.props.FloatProperty(
+        name="repeat",
+        description="number of times to repeat selected range",
+        default=1,
+        min=1,
+        max=100,
+        update=track_update,
+    )
     sa_beg: bpy.props.IntProperty(
         name="first",
         description="first frame from action to use",
@@ -1242,30 +1254,14 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
         update=track_update,
     )
     s_beg: bpy.props.IntProperty(
-        name="start frame",
-        description="start frame number",
+        name="start",
+        description="strip start frame",
         default=1,
         min=1,
         update=track_update,
     )
     s_end: bpy.props.IntProperty(default=2)
-    s_sca: bpy.props.FloatProperty(
-        name="scale",
-        description="scaling factor",
-        default=1,
-        min=0.001,
-        max=100,
-        update=track_update,
-    )
-    s_rep: bpy.props.FloatProperty(
-        name="repeat",
-        description="number of times to repeat selected range",
-        default=1,
-        min=1,
-        max=100,
-        update=track_update,
-    )
-    s_bln: bpy.props.EnumProperty(
+    s_blend: bpy.props.EnumProperty(
         name="blend type",
         description="method of combining strip with accumulated result",
         items=(
@@ -1277,26 +1273,25 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
         ),
         default="REPLACE",
     )
-    s_blendin: bpy.props.IntProperty(
-        name="blend-in",
+    s_blin: bpy.props.IntProperty(
+        name="blend in",
         description="blend-in frames",
         default=0,
         get=track_s_blin_get,
         set=track_s_blin_set,
         update=track_s_blin_update,
     )
-    s_blendout: bpy.props.IntProperty(
-        name="blend-out",
+    s_blout: bpy.props.IntProperty(
+        name="blend out",
         description="blend-out frames",
         default=0,
         get=track_s_blout_get,
         set=track_s_blout_set,
     )
-    s_blendauto: bpy.props.BoolProperty(
+    s_blauto: bpy.props.BoolProperty(
         name="auto blend",
         description="use auto-blend",
         default=False,
-        update=track_blauto_update,
     )
     s_xpl: bpy.props.EnumProperty(
         name="extrapolation",
@@ -1310,6 +1305,36 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
     )
     s_bak: bpy.props.BoolProperty(
         name="reverse", description="play in reverse", default=False
+    )
+    st_warp: bpy.props.BoolProperty(
+        name="timewarp",
+        description="use acceleration curves",
+        default=False,
+        update=track_update,
+    )
+    st_curve: bpy.props.EnumProperty(
+        name="timewarp curve",
+        description="type of acceleration curve",
+        items=(
+            ("12", "sine", "sine"),
+            ("9", "quad", "quadratic"),
+            ("6", "cube", "cubic"),
+            ("10", "quart", "quartic"),
+            ("11", "quint", "quintic"),
+            ("8", "expo", "dramatic"),
+        ),
+        default="12",
+    )
+    st_ease: bpy.props.EnumProperty(
+        name="timewarp easing",
+        description="type of easing",
+        items=(
+            ("0", "auto", "automatic"),
+            ("1", "in", "ease in"),
+            ("2", "out", "ease out"),
+            ("3", "in-out", "ease in and out"),
+        ),
+        default="0",
     )
 
     def copy_from_pg(self, item):
@@ -1342,17 +1367,25 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
             ob = pool.pop_mesh
             strip = ob.data.animation_data.nla_tracks[item.t_name].strips[0]
             strip.scale = self.s_sca
-            strip.repeat = self.s_rep
+            strip.repeat = 1 if self.st_warp else self.s_rep
             strip.action_frame_start = self.sa_beg
             strip.action_frame_end = self.sa_end
             strip.frame_start = self.s_beg
             strip.frame_end = self.s_end
-            strip.blend_type = self.s_bln
-            strip.use_auto_blend = self.s_blendauto
-            strip.blend_in = self.s_blendin
-            strip.blend_out = self.s_blendout
+            strip.blend_type = self.s_blend
+            strip.use_auto_blend = self.s_blauto
+            strip.blend_in = 0 if self.s_blauto else self.s_blin
+            strip.blend_out = 0 if self.s_blauto else self.s_blout
             strip.extrapolation = self.s_xpl
-            strip.use_reverse = self.s_bak
+            strip.use_reverse = False if self.st_warp else self.s_bak
+            strip.use_animated_time = self.st_warp
+            if self.st_warp:
+                ModFNOP.strip_time_fcurve_reset(
+                    strip,
+                    (self.s_beg, self.sa_beg, self.s_end, self.sa_end),
+                    int(self.st_curve),
+                    int(self.st_ease),
+                )
         except Exception as my_err:
             pool.update_ok = True
             print(f"track_edit: {my_err.args}")
@@ -1367,36 +1400,60 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
         c = box.column(align=True)
         s = c.split(factor=0.3)
         col = s.column(align=True)
-        names = (
-            "Action Range",
-            "Start Frame",
-            "Scale/Repeat",
-            "Blend Type",
-            "Blend In/Out",
-            "Playback",
-        )
-        for n in names:
-            row = col.row()
-            row.label(text=n)
+        row = col.row()
+        row.label(text="Action Range")
+        row = col.row()
+        row.label(text="Start Frame")
         col = s.column(align=True)
         row = col.row(align=True)
         row.prop(self, "sa_beg", text="")
         row.prop(self, "sa_end", text="")
         row = col.row(align=True)
         row.prop(self, "s_beg", text="")
+        box = layout.box()
+        c = box.column(align=True)
+        s = c.split(factor=0.3)
+        col = s.column(align=True)
+        names = ("Blend Type", "Blend In/Out", "Extrapolation")
+        for n in names:
+            row = col.row()
+            row.label(text=n)
+        col = s.column(align=True)
         row = col.row(align=True)
-        row.prop(self, "s_sca", text="")
-        row.prop(self, "s_rep", text="")
+        row.prop(self, "s_blend", text="")
+        row.prop(self, "s_blauto", toggle=True)
         row = col.row(align=True)
-        row.prop(self, "s_bln", text="")
-        row.prop(self, "s_blendauto", toggle=True)
-        row = col.row(align=True)
-        row.enabled = not self.s_blendauto
-        row.prop(self, "s_blendin", text="")
-        row.prop(self, "s_blendout", text="")
+        row.enabled = not self.s_blauto
+        row.prop(self, "s_blin", text="")
+        row.prop(self, "s_blout", text="")
         row = col.row(align=True)
         row.prop(self, "s_xpl", text="")
-        row.prop(self, "s_bak", toggle=True)
+        box = layout.box()
+        c = box.column(align=True)
+        s = c.split(factor=0.3)
+        col = s.column(align=True)
+        names = ("Scale/Repeat", "Playback", "Warp Curves")
+        for n in names:
+            row = col.row()
+            row.label(text=n)
+        accel = self.st_warp
+        col = s.column(align=True)
+        row = col.row(align=True)
+        c = row.column(align=True)
+        c.prop(self, "s_sca", text="")
+        c = row.column(align=True)
+        c.enabled = not accel
+        c.prop(self, "s_rep", text="")
+        row = col.row(align=True)
+        c = row.column(align=True)
+        c.prop(self, "st_warp", toggle=True)
+        c = row.column(align=True)
+        c.enabled = not accel
+        c.prop(self, "s_bak", toggle=True)
+        row = col.row(align=True)
+        row.enabled = accel
+        row.prop(self, "st_curve", text="")
+        row.prop(self, "st_ease", text="")
 
 
 class PTDBLNPOPM_OT_track_enable(bpy.types.Operator):
@@ -1508,17 +1565,25 @@ class PTDBLNPOPM_OT_track_copy(bpy.types.Operator):
             start = int(action.frame_range[0])
             strip = track.strips.new(name, start, action)
             strip.scale = source.s_sca
-            strip.repeat = source.s_rep
+            strip.repeat = 1 if source.st_warp else source.s_rep
             strip.action_frame_start = source.sa_beg
             strip.action_frame_end = source.sa_end
             strip.frame_start = source.s_beg
             strip.frame_end = source.s_end
-            strip.blend_type = source.s_bln
-            strip.use_auto_blend = source.s_blendauto
-            strip.blend_in = source.s_blendin
-            strip.blend_out = source.s_blendout
+            strip.blend_type = source.s_blend
+            strip.use_auto_blend = source.s_blauto
+            strip.blend_in = 0 if source.s_blauto else source.s_blin
+            strip.blend_out = 0 if source.s_blauto else source.s_blout
             strip.extrapolation = source.s_xpl
-            strip.use_reverse = source.s_bak
+            strip.use_reverse = False if source.st_warp else source.s_bak
+            strip.use_animated_time = source.st_warp
+            if source.st_warp:
+                ModFNOP.strip_time_fcurve_reset(
+                    strip,
+                    (source.s_beg, source.sa_beg, source.s_end, source.sa_end),
+                    int(source.st_curve),
+                    int(source.st_ease),
+                )
         except Exception as my_err:
             pool.update_ok = True
             print(f"track_copy: {my_err.args}")
@@ -1666,20 +1731,22 @@ class PTDBLNPOPM_OT_anim_action(bpy.types.Operator):
         a_name = pool.act_name
         k_beg = pool.ani_kf_start
         k_stp = pool.ani_kf_step
-        kls = [int(pool.ani_kf_type)] * loop
+        ki_type = int(pool.ani_kf_type)
+        kls = [ki_type] * loop
         fls = [k_beg + i * k_stp for i in range(loop)]
         try:
             popme = pool.pop_mesh.data
             active_locs = len(popme.vertices)
             trk = pool.trax.add()
             action = bpy.data.actions.new(a_name)
+            funcname = "aniact_fc_create_bez" if ki_type == 2 else "aniact_fc_create"
+            fc_create = getattr(ModFNOP, funcname)
             for p in range(active_locs):
                 dp = f"vertices[{p}].co"
                 for di in range(3):
                     vls = [kloc[k][p][di] for k in range(loop)]
-                    ModFNOP.aniact_fcurve_create(action, dp, di, fls, vls, kls, loop)
+                    fc_create(action, dp, di, fls, vls, kls, loop)
             ModFNOP.aniact_nla_track_add(popme, action)
-            trk.name = a_name
             trk.t_name = action.name
             k_end = fls[-1]
             trk.ac_beg = k_beg

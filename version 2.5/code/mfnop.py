@@ -449,11 +449,19 @@ def aniact_noiz_list(noiz, loop):
     return bln_val_list(amp, noiz.ani_blin, noiz.ani_blout, noiz.ani_stp, loop)
 
 
-def aniact_fcurve_create(action, dp, di, fls, vls, kls, loop):
+def aniact_fc_create(action, dp, di, fls, vls, kls, loop):
     fc = action.fcurves.new(data_path=dp, index=di)
     fc.keyframe_points.add(count=loop)
     fc.keyframe_points.foreach_set("co", [i for fv in zip(fls, vls) for i in fv])
     fc.keyframe_points.foreach_set("interpolation", kls)
+
+
+def aniact_fc_create_bez(action, dp, di, fls, vls, kls, loop):
+    fc = action.fcurves.new(data_path=dp, index=di)
+    fc.keyframe_points.add(count=loop)
+    fc.keyframe_points.foreach_set("co", [i for fv in zip(fls, vls) for i in fv])
+    fc.keyframe_points.foreach_set("interpolation", kls)
+    fc.update()
 
 
 def aniact_nla_track_add(mesh_data, action):
@@ -467,3 +475,13 @@ def aniact_nla_track_add(mesh_data, action):
     strip.blend_in = 0
     strip.blend_out = 0
     strip.extrapolation = "HOLD"
+
+
+def strip_time_fcurve_reset(strip, fvl, ki, kease):
+    fc = strip.fcurves[0]
+    fc.auto_smoothing = "NONE"
+    fc.keyframe_points.clear()
+    fc.keyframe_points.add(2)
+    fc.keyframe_points.foreach_set("co", fvl)
+    fc.keyframe_points.foreach_set("interpolation", (ki, ki))
+    fc.keyframe_points.foreach_set("easing", (kease, kease))

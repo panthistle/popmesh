@@ -995,28 +995,26 @@ class PTDBLNPOPM_PT_ui_animode(PTDBLNPOPM_PT_ui, bpy.types.Panel):
             row = c.row()
             row.enabled = item.active
             row.operator("ptdblnpopm.track_edit", text="Edit")
+
             box = c.box()
             box.enabled = False
             row = box.row(align=True)
             s = row.split(factor=0.6)
             sc = s.column(align=True)
-            row = sc.row(align=True)
-            row.label(text="Action Range:")
-            row = sc.row(align=True)
-            row.label(text="Track Frames:")
-            row = sc.row(align=True)
-            row.label(text="Repeat:")
-            row = sc.row(align=True)
-            row.label(text="Scale:")
+            names = ("Action Range:", "Strip Frames:", "Scale:", "Repeat:")
+            for n in names:
+                row = sc.row(align=True)
+                row.label(text=n)
             sc = s.column(align=True)
             row = sc.row(align=True)
             row.label(text=f"{item.sa_beg} - {item.sa_end}")
             row = sc.row(align=True)
             row.label(text=f"{item.s_beg} - {item.s_end}")
             row = sc.row(align=True)
-            row.label(text=f"{item.s_rep:.4f}")
-            row = sc.row(align=True)
             row.label(text=f"{item.s_sca:.4f}")
+            row = sc.row(align=True)
+            reps = 1.0 if item.st_warp else item.s_rep
+            row.label(text=f"{reps:.4f}")
         else:
             c.enabled = False
             c.label(text="no selection")
