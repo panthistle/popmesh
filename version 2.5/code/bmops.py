@@ -1295,7 +1295,7 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
     )
     s_xpl: bpy.props.EnumProperty(
         name="extrapolation",
-        description="extrapolate: action to take for gaps past the strip extents",
+        description="action to take for gaps past the strip extents",
         items=(
             ("NOTHING", "nothing", "nothing"),
             ("HOLD", "hold", "hold"),
@@ -1386,6 +1386,13 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
                     int(self.st_curve),
                     int(self.st_ease),
                 )
+            else:
+                try:
+                    stfc = strip.fcurves[0]
+                    stfc.keyframe_points.clear()
+                except:
+                    pass
+                strip.strip_time = 0.0
         except Exception as my_err:
             pool.update_ok = True
             print(f"track_edit: {my_err.args}")
@@ -1414,7 +1421,7 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
         c = box.column(align=True)
         s = c.split(factor=0.3)
         col = s.column(align=True)
-        names = ("Blend Type", "Blend In/Out", "Extrapolation")
+        names = ("Blend Type", "Blend Frames", "Extrapolation")
         for n in names:
             row = col.row()
             row.label(text=n)
@@ -1556,9 +1563,6 @@ class PTDBLNPOPM_OT_track_copy(bpy.types.Operator):
                 setattr(source, key, d[key])
             source.name = f"{source.name}_copy"
             source.t_name = name
-            idx = len(pool.trax) - 1
-            pool.trax.move(idx, 0)
-            pool.trax_idx = 0
             track = ob.data.animation_data.nla_tracks.new()
             track.name = name
             track.mute = not source.active
@@ -1584,6 +1588,9 @@ class PTDBLNPOPM_OT_track_copy(bpy.types.Operator):
                     int(source.st_curve),
                     int(source.st_ease),
                 )
+            idx = len(pool.trax) - 1
+            pool.trax.move(idx, 0)
+            pool.trax_idx = 0
         except Exception as my_err:
             pool.update_ok = True
             print(f"track_copy: {my_err.args}")
