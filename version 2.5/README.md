@@ -1,7 +1,7 @@
 ### About
 
 Mesh generator/animator add-on for Blender.  Tested on Blender 3.6 LTS.  
-Latest update: 13-May-2024
+Latest update: 14-May-2024
 
 
 ### Download and Install
