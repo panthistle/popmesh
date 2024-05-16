@@ -245,14 +245,10 @@ class PTDBLNPOPM_PT_ui_setup(PTDBLNPOPM_PT_ui, bpy.types.Panel):
         col = bcol.column(align=True)
         row = col.row(align=True)
         row.enabled = mesh_ok and edpans_ok
-        row.prop(pool, "auto_smooth", toggle=True)
+        row.prop(pool, "show_wire", toggle=True)
         row.prop(pool, "shade_smooth", toggle=True)
         row = col.row(align=True)
-        rc = row.column(align=True)
-        rc.enabled = mesh_ok and edpans_ok
-        rc.prop(pool, "show_wire", toggle=True)
-        rc = row.column(align=True)
-        rc.prop(pool, "show_warn", toggle=True)
+        row.prop(pool, "show_warn", toggle=True)
 
 
 class PTDBLNPOPM_PT_ui_path(PTDBLNPOPM_PT_ui, bpy.types.Panel):

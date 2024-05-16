@@ -133,7 +133,6 @@ class PTDBLNPOPM_OT_pop_reset(bpy.types.Operator):
                 pool.pop_mesh = ModFNOP.get_new_mesh(scene)
             if self.newdef:
                 pool.props_unset()
-            pool.pop_mesh.data.use_auto_smooth = pool.auto_smooth
             pool.pop_mesh.show_wire = pool.show_wire
             ModPOPM.scene_update(scene, setup="all")
         except Exception as my_err:
@@ -243,8 +242,6 @@ class PTDBLNPOPM_OT_display_options(bpy.types.Operator):
                 smooth = [pool.shade_smooth] * len(me.polygons)
                 me.polygons.foreach_set("use_smooth", smooth)
                 me.update()
-            elif self.option == "auto_smooth":
-                ob.data.use_auto_smooth = pool.auto_smooth
             else:
                 ob.show_wire = pool.show_wire
         except Exception as my_err:
@@ -1037,7 +1034,6 @@ class PTDBLNPOPM_OT_read_setts(bpy.types.Operator, ImportHelper):
                     bpy.ops.outliner.orphans_purge(do_recursive=True)
             else:
                 pool.pop_mesh = ModFNOP.get_new_mesh(scene)
-            pool.pop_mesh.data.use_auto_smooth = pool.auto_smooth
             pool.pop_mesh.show_wire = pool.show_wire
             ModPOPM.scene_update(scene, setup="all")
         except Exception as my_err:
@@ -1180,6 +1176,8 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
         reps = 1 if self.st_warp else self.s_rep
         fval = (self.sa_end - self.sa_beg) * self.s_sca * reps
         self.s_end = self.s_beg + int(fval)
+        if self.st_ctrl:
+            self.st_frame = self.st_frame
         if not self.s_blauto:
             self.s_blin = self.s_blin
 
@@ -1218,6 +1216,16 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
         frms = (self.s_end - self.s_beg) - self.s_blin
         self["s_blout"] = min(max(0, value), frms)
 
+    def track_st_ctrl_update(self, context):
+        if self.st_ctrl:
+            self.st_frame = self.get("st_frame", 1)
+
+    def track_st_frame_get(self):
+        return self.get("st_frame", 1)
+
+    def track_st_frame_set(self, value):
+        self["st_frame"] = min(max(self.sa_beg + 1, value), self.sa_end - 1)
+
     update_pause: bpy.props.BoolProperty(default=True)
     ac_beg: bpy.props.IntProperty(default=1)
     ac_end: bpy.props.IntProperty(default=1)
@@ -1231,7 +1239,10 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
     )
     s_rep: bpy.props.FloatProperty(
         name="repeat",
-        description="number of times to repeat selected range",
+        description=(
+            "number of times to repeat selected range, "
+            "effective when timewarp is disabled"
+        ),
         default=1,
         min=1,
         max=100,
@@ -1304,17 +1315,19 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
         default="HOLD",
     )
     s_bak: bpy.props.BoolProperty(
-        name="reverse", description="play in reverse", default=False
+        name="reverse",
+        description="play in reverse, effective when timewarp is disabled",
+        default=False,
     )
     st_warp: bpy.props.BoolProperty(
         name="timewarp",
-        description="use acceleration curves",
+        description="use time function curves",
         default=False,
         update=track_update,
     )
     st_curve: bpy.props.EnumProperty(
         name="timewarp curve",
-        description="type of acceleration curve",
+        description="warp function",
         items=(
             ("12", "sine", "sine"),
             ("9", "quad", "quadratic"),
@@ -1327,7 +1340,7 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
     )
     st_ease: bpy.props.EnumProperty(
         name="timewarp easing",
-        description="type of easing",
+        description="warp interpolation",
         items=(
             ("0", "auto", "automatic"),
             ("1", "in", "ease in"),
@@ -1335,6 +1348,19 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
             ("3", "in-out", "ease in and out"),
         ),
         default="0",
+    )
+    st_ctrl: bpy.props.BoolProperty(
+        name="control",
+        description="set the timewarp start frame",
+        default=False,
+        update=track_st_ctrl_update,
+    )
+    st_frame: bpy.props.IntProperty(
+        name="timewarp start frame",
+        description="start timewarp from this frame, effective when control is enabled",
+        default=1,
+        get=track_st_frame_get,
+        set=track_st_frame_set,
     )
 
     def copy_from_pg(self, item):
@@ -1380,12 +1406,31 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
             strip.use_reverse = False if self.st_warp else self.s_bak
             strip.use_animated_time = self.st_warp
             if self.st_warp:
-                ModFNOP.strip_time_fcurve_reset(
-                    strip,
-                    (self.s_beg, self.sa_beg, self.s_end, self.sa_end),
-                    int(self.st_curve),
-                    int(self.st_ease),
-                )
+                i_lerp = int(self.st_curve)
+                i_ease = int(self.st_ease)
+                if self.st_ctrl:
+                    fpts = 3
+                    fvls = (
+                        self.s_beg,
+                        self.sa_beg,
+                        self.s_beg + self.st_frame - self.sa_beg,
+                        self.st_frame,
+                        self.s_end,
+                        self.sa_end,
+                    )
+                    klerps = (1, i_lerp, 1)
+                    keases = (0, i_ease, 0)
+                else:
+                    fpts = 2
+                    fvls = (
+                        self.s_beg,
+                        self.sa_beg,
+                        self.s_end,
+                        self.sa_end,
+                    )
+                    klerps = (i_lerp, 1)
+                    keases = (i_ease, 0)
+                ModFNOP.strip_time_fcurve_reset(strip, fpts, fvls, klerps, keases)
             else:
                 try:
                     stfc = strip.fcurves[0]
@@ -1439,7 +1484,7 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
         c = box.column(align=True)
         s = c.split(factor=0.3)
         col = s.column(align=True)
-        names = ("Scale/Repeat", "Playback", "Warp Curves")
+        names = ("Scale/Repeat", "Playback", "Warp Curves", "Start Frame")
         for n in names:
             row = col.row()
             row.label(text=n)
@@ -1461,6 +1506,13 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
         row.enabled = accel
         row.prop(self, "st_curve", text="")
         row.prop(self, "st_ease", text="")
+        row = col.row(align=True)
+        row.enabled = accel
+        c = row.column(align=True)
+        c.prop(self, "st_ctrl", toggle=True)
+        c = row.column(align=True)
+        c.enabled = self.st_ctrl
+        c.prop(self, "st_frame", text="")
 
 
 class PTDBLNPOPM_OT_track_enable(bpy.types.Operator):
@@ -1582,12 +1634,26 @@ class PTDBLNPOPM_OT_track_copy(bpy.types.Operator):
             strip.use_reverse = False if source.st_warp else source.s_bak
             strip.use_animated_time = source.st_warp
             if source.st_warp:
-                ModFNOP.strip_time_fcurve_reset(
-                    strip,
-                    (source.s_beg, source.sa_beg, source.s_end, source.sa_end),
-                    int(source.st_curve),
-                    int(source.st_ease),
-                )
+                i_lerp = int(source.st_curve)
+                i_ease = int(source.st_ease)
+                if source.st_ctrl:
+                    fpts = 3
+                    fvls = (
+                        source.s_beg,
+                        source.sa_beg,
+                        source.s_beg + source.st_frame - source.sa_beg,
+                        source.st_frame,
+                        source.s_end,
+                        source.sa_end,
+                    )
+                    klerps = (1, i_lerp, 1)
+                    keases = (0, i_ease, 0)
+                else:
+                    fpts = 2
+                    fvls = (source.s_beg, source.sa_beg, source.s_end, source.sa_end)
+                    klerps = (i_lerp, 1)
+                    keases = (i_ease, 0)
+                ModFNOP.strip_time_fcurve_reset(strip, fpts, fvls, klerps, keases)
             idx = len(pool.trax) - 1
             pool.trax.move(idx, 0)
             pool.trax_idx = 0

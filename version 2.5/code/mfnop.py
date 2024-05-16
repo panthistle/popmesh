@@ -61,7 +61,6 @@ file_excluded_attributes = {
     "replace_mesh",
     "show_warn",
     "show_wire",
-    "auto_smooth",
     "shade_smooth",
     "anicalc",
 }
@@ -477,11 +476,11 @@ def aniact_nla_track_add(mesh_data, action):
     strip.extrapolation = "HOLD"
 
 
-def strip_time_fcurve_reset(strip, fvl, ki, kease):
+def strip_time_fcurve_reset(strip, fpts, fvls, kils, kels):
     fc = strip.fcurves[0]
     fc.auto_smoothing = "NONE"
     fc.keyframe_points.clear()
-    fc.keyframe_points.add(2)
-    fc.keyframe_points.foreach_set("co", fvl)
-    fc.keyframe_points.foreach_set("interpolation", (ki, ki))
-    fc.keyframe_points.foreach_set("easing", (kease, kease))
+    fc.keyframe_points.add(fpts)
+    fc.keyframe_points.foreach_set("co", fvls)
+    fc.keyframe_points.foreach_set("interpolation", kils)
+    fc.keyframe_points.foreach_set("easing", kels)

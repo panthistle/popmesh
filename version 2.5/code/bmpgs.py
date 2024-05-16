@@ -1358,6 +1358,8 @@ class PTDBLNPOPM_track(bpy.types.PropertyGroup):
     st_warp: bpy.props.BoolProperty(default=False)
     st_curve: bpy.props.StringProperty(default="12")
     st_ease: bpy.props.StringProperty(default="0")
+    st_ctrl: bpy.props.BoolProperty(default=False)
+    st_frame: bpy.props.IntProperty(default=1)
 
     def to_dct(self, exclude=set()):
         d = {}
@@ -1641,10 +1643,6 @@ class PTDBLNPOPM_pool(bpy.types.PropertyGroup):
         if self.update_ok:
             bpy.ops.ptdblnpopm.display_options(option="show_wire")
 
-    def pool_auto_smooth_update(self, context):
-        if self.update_ok:
-            bpy.ops.ptdblnpopm.display_options(option="auto_smooth")
-
     def pool_shade_smooth_update(self, context):
         if self.update_ok:
             bpy.ops.ptdblnpopm.display_options(option="shade_smooth")
@@ -1654,13 +1652,6 @@ class PTDBLNPOPM_pool(bpy.types.PropertyGroup):
         description="show wireframe",
         default=False,
         update=pool_show_wire_update,
-        options={"HIDDEN"},
-    )
-    auto_smooth: bpy.props.BoolProperty(
-        name="auto smooth",
-        description="auto smooth normals",
-        default=False,
-        update=pool_auto_smooth_update,
         options={"HIDDEN"},
     )
     shade_smooth: bpy.props.BoolProperty(
@@ -1710,7 +1701,6 @@ class PTDBLNPOPM_pool(bpy.types.PropertyGroup):
             "replace_mesh",
             "show_warn",
             "show_wire",
-            "auto_smooth",
             "shade_smooth",
             "anicalc",
         }
