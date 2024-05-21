@@ -1147,9 +1147,14 @@ class PTDBLNPOPM_OT_anicalc(bpy.types.Operator):
     def invoke(self, context, event):
         if self.current:
             pool = context.scene.ptdblnpopm_pool
-            pool.anicalc.start = pool.ani_kf_start
-            pool.anicalc.step = pool.ani_kf_step
-            pool.anicalc.loop = pool.ani_kf_loop
+            beg = pool.ani_kf_start
+            stp = pool.ani_kf_step
+            loop = pool.ani_kf_loop
+            pool.anicalc.start = beg
+            pool.anicalc.step = stp
+            pool.anicalc.loop = loop
+            pool.anicalc.first = beg
+            pool.anicalc.last = beg + stp * (loop - 1)
         return self.execute(context)
 
     def execute(self, context):
@@ -1172,10 +1177,9 @@ class PTDBLNPOPM_OT_anicalc(bpy.types.Operator):
                 clc.info = ", ".join(str(i) for i in cycles)
             else:
                 exp = int(clc.exp)
-                beg = clc.start
-                stp = clc.step
-                loop = clc.loop
-                end = beg + stp * (loop - 1)
+                beg = clc.first
+                end = max(clc.last, beg + 2)
+                clc.last = end
                 clc.fra = min(max(beg + 1, clc.fra), end - 1)
                 ratio = ModFNOP.anicalc_delay(clc.fra, beg, end, exp)
                 clc.info = str(ratio)

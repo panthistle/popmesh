@@ -1513,7 +1513,7 @@ class PTDBLNPOPM_anicalc(bpy.types.PropertyGroup):
     )
     loop: bpy.props.IntProperty(
         name="loop",
-        description="loop value",
+        description="total keyframes",
         default=5,
         min=2,
         options={"HIDDEN"},
@@ -1542,7 +1542,7 @@ class PTDBLNPOPM_anicalc(bpy.types.PropertyGroup):
         options={"HIDDEN"},
     )
     start: bpy.props.IntProperty(
-        name="start ",
+        name="start",
         description="start keyframe",
         default=1,
         min=1,
@@ -1572,6 +1572,20 @@ class PTDBLNPOPM_anicalc(bpy.types.PropertyGroup):
         description="control frame",
         default=2,
         min=2,
+        options={"HIDDEN"},
+    )
+    first: bpy.props.IntProperty(
+        name="first",
+        description="first frame",
+        default=1,
+        min=1,
+        options={"HIDDEN"},
+    )
+    last: bpy.props.IntProperty(
+        name="last",
+        description="last frame",
+        default=3,
+        min=3,
         options={"HIDDEN"},
     )
 
