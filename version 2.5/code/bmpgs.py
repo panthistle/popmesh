@@ -1359,7 +1359,7 @@ class PTDBLNPOPM_track(bpy.types.PropertyGroup):
     st_curve: bpy.props.StringProperty(default="12")
     st_ease: bpy.props.StringProperty(default="0")
     st_ctrl: bpy.props.BoolProperty(default=False)
-    st_frame: bpy.props.IntProperty(default=1)
+    st_fra: bpy.props.IntProperty(default=1)
 
     def to_dct(self, exclude=set()):
         d = {}
@@ -1493,18 +1493,19 @@ class PTDBLNPOPM_meshrot(bpy.types.PropertyGroup):
 
 
 class PTDBLNPOPM_anicalc(bpy.types.PropertyGroup):
-    info: bpy.props.StringProperty(default="")
+    info: bpy.props.StringProperty(name="results", description="results", default="")
 
     def anicalc_type_update(self, context):
-        bpy.ops.ptdblnpopm.anicalc()
+        bpy.ops.ptdblnpopm.anicalc(current=False)
 
     calc_type: bpy.props.EnumProperty(
         name="calculation",
         description="calculation",
         items=(
-            ("offsets", "offsets", "calculate index offsets from items"),
-            ("loop", "loop", "calculate loop from [items, offset, start, step]"),
-            ("cycles", "cycles", "calculate mirror cycles from loop"),
+            ("offsets", "offsets", "index offsets from items"),
+            ("loop", "loop", "loop from [items, offset, start, step]"),
+            ("cycles", "cycles", "mirror cycles from loop"),
+            ("strip", "time scale", "strip time scale from control frame and function"),
         ),
         default="offsets",
         update=anicalc_type_update,
@@ -1514,7 +1515,7 @@ class PTDBLNPOPM_anicalc(bpy.types.PropertyGroup):
         name="loop",
         description="loop value",
         default=5,
-        min=3,
+        min=2,
         options={"HIDDEN"},
     )
     items: bpy.props.IntProperty(
@@ -1552,6 +1553,25 @@ class PTDBLNPOPM_anicalc(bpy.types.PropertyGroup):
         description="keyframe step",
         default=1,
         min=1,
+        options={"HIDDEN"},
+    )
+    exp: bpy.props.EnumProperty(
+        name="timewarp curve",
+        description="warp function",
+        items=(
+            ("2", "quad", "quadratic"),
+            ("3", "cube", "cubic"),
+            ("4", "quart", "quartic"),
+            ("5", "quint", "quintic"),
+        ),
+        default="2",
+        options={"HIDDEN"},
+    )
+    fra: bpy.props.IntProperty(
+        name="frame",
+        description="control frame",
+        default=2,
+        min=2,
         options={"HIDDEN"},
     )
 

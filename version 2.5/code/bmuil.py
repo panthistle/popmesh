@@ -895,8 +895,10 @@ class PTDBLNPOPM_PT_ui_anicalc(PTDBLNPOPM_PT_ui, bpy.types.Panel):
         box = layout.box()
         bcol = box.column()
         row = bcol.row(align=True)
+        row.operator("ptdblnpopm.anicalc", text="Calculate").current = False
+        row.operator("ptdblnpopm.anicalc", text="Current").current = True
+        row = bcol.row(align=True)
         row.prop(clc, "calc_type", text="")
-        row.operator("ptdblnpopm.anicalc", text="Calculate")
         row = bcol.row(align=True)
         col = row.column(align=True)
         caller = clc.calc_type
@@ -909,7 +911,14 @@ class PTDBLNPOPM_PT_ui_anicalc(PTDBLNPOPM_PT_ui, bpy.types.Panel):
             row.prop(clc, "step", text="")
         elif caller == "offsets":
             row.prop(clc, "items", text="")
+        elif caller == "cycles":
+            row.prop(clc, "loop", text="")
         else:
+            row.prop(clc, "fra", text="")
+            row.prop(clc, "exp", text="")
+            row = col.row(align=True)
+            row.prop(clc, "start", text="")
+            row.prop(clc, "step", text="")
             row.prop(clc, "loop", text="")
         row = col.row(align=True)
         row.prop(clc, "info", text="")

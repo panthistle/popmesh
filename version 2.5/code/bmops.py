@@ -1135,6 +1135,23 @@ class PTDBLNPOPM_OT_anicalc(bpy.types.Operator):
     bl_description = "animation calculations"
     bl_options = {"REGISTER", "INTERNAL", "UNDO"}
 
+    current: bpy.props.BoolProperty(default=False, options={"HIDDEN"})
+
+    @classmethod
+    def description(cls, context, properties):
+        update = getattr(properties, "current")
+        if update:
+            return "get values from animode"
+        return "animation calculations"
+
+    def invoke(self, context, event):
+        if self.current:
+            pool = context.scene.ptdblnpopm_pool
+            pool.anicalc.start = pool.ani_kf_start
+            pool.anicalc.step = pool.ani_kf_step
+            pool.anicalc.loop = pool.ani_kf_loop
+        return self.execute(context)
+
     def execute(self, context):
         scene = context.scene
         clc = scene.ptdblnpopm_pool.anicalc
@@ -1146,13 +1163,22 @@ class PTDBLNPOPM_OT_anicalc(bpy.types.Operator):
             elif caller == "offsets":
                 offsets = sorted(ModFNOP.anicalc_factors(clc.items))[:-1]
                 clc.info = ", ".join(str(i) for i in offsets)
-            else:
+            elif caller == "cycles":
                 loop = clc.loop
                 if not loop % 2:
                     self.report({"INFO"}, "loop should be odd, positive integer!")
                 hlp = loop // 2
                 cycles = sorted(ModFNOP.anicalc_factors(hlp))
                 clc.info = ", ".join(str(i) for i in cycles)
+            else:
+                exp = int(clc.exp)
+                beg = clc.start
+                stp = clc.step
+                loop = clc.loop
+                end = beg + stp * (loop - 1)
+                clc.fra = min(max(beg + 1, clc.fra), end - 1)
+                ratio = ModFNOP.anicalc_delay(clc.fra, beg, end, exp)
+                clc.info = str(ratio)
         except Exception as my_err:
             clc.info = ""
             print(f"anicalc: {my_err.args}")
@@ -1177,7 +1203,7 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
         fval = (self.sa_end - self.sa_beg) * self.s_sca * reps
         self.s_end = self.s_beg + int(fval)
         if self.st_ctrl:
-            self.st_frame = self.st_frame
+            self.st_fra = self.st_fra
         if not self.s_blauto:
             self.s_blin = self.s_blin
 
@@ -1218,13 +1244,13 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
 
     def track_st_ctrl_update(self, context):
         if self.st_ctrl:
-            self.st_frame = self.get("st_frame", 1)
+            self.st_fra = self.get("st_fra", 1)
 
-    def track_st_frame_get(self):
-        return self.get("st_frame", 1)
+    def track_st_fra_get(self):
+        return self.get("st_fra", 1)
 
-    def track_st_frame_set(self, value):
-        self["st_frame"] = min(max(self.sa_beg + 1, value), self.sa_end - 1)
+    def track_st_fra_set(self, value):
+        self["st_fra"] = min(max(self.sa_beg + 1, value), self.sa_end - 1)
 
     update_pause: bpy.props.BoolProperty(default=True)
     ac_beg: bpy.props.IntProperty(default=1)
@@ -1327,7 +1353,7 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
     )
     st_curve: bpy.props.EnumProperty(
         name="timewarp curve",
-        description="warp function",
+        description="timewarp function",
         items=(
             ("12", "sine", "sine"),
             ("9", "quad", "quadratic"),
@@ -1340,7 +1366,7 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
     )
     st_ease: bpy.props.EnumProperty(
         name="timewarp easing",
-        description="warp interpolation",
+        description="timewarp interpolation easing",
         items=(
             ("0", "auto", "automatic"),
             ("1", "in", "ease in"),
@@ -1351,16 +1377,16 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
     )
     st_ctrl: bpy.props.BoolProperty(
         name="control",
-        description="set the timewarp start frame",
+        description="use timewarp control frame for deceleration",
         default=False,
         update=track_st_ctrl_update,
     )
-    st_frame: bpy.props.IntProperty(
-        name="timewarp start frame",
-        description="start timewarp from this frame, effective when control is enabled",
+    st_fra: bpy.props.IntProperty(
+        name="timewarp control frame",
+        description="timewarp control frame",
         default=1,
-        get=track_st_frame_get,
-        set=track_st_frame_set,
+        get=track_st_fra_get,
+        set=track_st_fra_set,
     )
 
     def copy_from_pg(self, item):
@@ -1390,46 +1416,44 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
         item = pool.trax[pool.trax_idx]
         self.copy_to_pg(item)
         try:
+            time_warp = self.st_warp
+            blauto = self.s_blauto
             ob = pool.pop_mesh
             strip = ob.data.animation_data.nla_tracks[item.t_name].strips[0]
             strip.scale = self.s_sca
-            strip.repeat = 1 if self.st_warp else self.s_rep
+            strip.repeat = 1 if time_warp else self.s_rep
             strip.action_frame_start = self.sa_beg
             strip.action_frame_end = self.sa_end
             strip.frame_start = self.s_beg
             strip.frame_end = self.s_end
             strip.blend_type = self.s_blend
-            strip.use_auto_blend = self.s_blauto
-            strip.blend_in = 0 if self.s_blauto else self.s_blin
-            strip.blend_out = 0 if self.s_blauto else self.s_blout
+            strip.use_auto_blend = blauto
+            strip.blend_in = 0 if blauto else self.s_blin
+            strip.blend_out = 0 if blauto else self.s_blout
             strip.extrapolation = self.s_xpl
-            strip.use_reverse = False if self.st_warp else self.s_bak
-            strip.use_animated_time = self.st_warp
-            if self.st_warp:
-                i_lerp = int(self.st_curve)
-                i_ease = int(self.st_ease)
-                if self.st_ctrl:
+            strip.use_reverse = False if time_warp else self.s_bak
+            strip.use_animated_time = time_warp
+            if time_warp:
+                w_kicu = int(self.st_curve)
+                w_keas = int(self.st_ease)
+                ctr_con = w_kicu in {6, 9, 10, 11} and w_keas == 2
+                if self.st_ctrl and ctr_con:
                     fpts = 3
                     fvls = (
                         self.s_beg,
                         self.sa_beg,
-                        self.s_beg + self.st_frame - self.sa_beg,
-                        self.st_frame,
+                        self.s_beg + self.st_fra - self.sa_beg,
+                        self.st_fra,
                         self.s_end,
                         self.sa_end,
                     )
-                    klerps = (1, i_lerp, 1)
-                    keases = (0, i_ease, 0)
+                    klerps = (1, w_kicu, 1)
+                    keases = (0, w_keas, 0)
                 else:
                     fpts = 2
-                    fvls = (
-                        self.s_beg,
-                        self.sa_beg,
-                        self.s_end,
-                        self.sa_end,
-                    )
-                    klerps = (i_lerp, 1)
-                    keases = (i_ease, 0)
+                    fvls = (self.s_beg, self.sa_beg, self.s_end, self.sa_end)
+                    klerps = (w_kicu, 1)
+                    keases = (w_keas, 0)
                 ModFNOP.strip_time_fcurve_reset(strip, fpts, fvls, klerps, keases)
             else:
                 try:
@@ -1466,7 +1490,7 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
         c = box.column(align=True)
         s = c.split(factor=0.3)
         col = s.column(align=True)
-        names = ("Blend Type", "Blend Frames", "Extrapolation")
+        names = ("Blend Type", "Blend Time", "Extrapolation")
         for n in names:
             row = col.row()
             row.label(text=n)
@@ -1484,35 +1508,32 @@ class PTDBLNPOPM_OT_track_edit(bpy.types.Operator):
         c = box.column(align=True)
         s = c.split(factor=0.3)
         col = s.column(align=True)
-        names = ("Scale/Repeat", "Playback", "Warp Curves", "Start Frame")
+        names = ("Time Scale", "Playback", "Strip Time", "Curve", "Ctrl Frame")
         for n in names:
             row = col.row()
             row.label(text=n)
         accel = self.st_warp
         col = s.column(align=True)
         row = col.row(align=True)
-        c = row.column(align=True)
-        c.prop(self, "s_sca", text="")
-        c = row.column(align=True)
-        c.enabled = not accel
-        c.prop(self, "s_rep", text="")
+        row.prop(self, "s_sca", text="")
         row = col.row(align=True)
-        c = row.column(align=True)
-        c.prop(self, "st_warp", toggle=True)
-        c = row.column(align=True)
-        c.enabled = not accel
-        c.prop(self, "s_bak", toggle=True)
+        row.enabled = not accel
+        row.prop(self, "s_rep", text="")
+        row.prop(self, "s_bak", toggle=True)
+        row = col.row(align=True)
+        row.prop(self, "st_warp", toggle=True)
         row = col.row(align=True)
         row.enabled = accel
         row.prop(self, "st_curve", text="")
         row.prop(self, "st_ease", text="")
         row = col.row(align=True)
-        row.enabled = accel
+        ctr_con = self.st_curve in {"6", "9", "10", "11"} and self.st_ease == "2"
+        row.enabled = accel and ctr_con
         c = row.column(align=True)
         c.prop(self, "st_ctrl", toggle=True)
         c = row.column(align=True)
         c.enabled = self.st_ctrl
-        c.prop(self, "st_frame", text="")
+        c.prop(self, "st_fra", text="")
 
 
 class PTDBLNPOPM_OT_track_enable(bpy.types.Operator):
@@ -1615,44 +1636,47 @@ class PTDBLNPOPM_OT_track_copy(bpy.types.Operator):
                 setattr(source, key, d[key])
             source.name = f"{source.name}_copy"
             source.t_name = name
+            time_warp = source.st_warp
+            blauto = source.s_blauto
             track = ob.data.animation_data.nla_tracks.new()
             track.name = name
             track.mute = not source.active
             start = int(action.frame_range[0])
             strip = track.strips.new(name, start, action)
             strip.scale = source.s_sca
-            strip.repeat = 1 if source.st_warp else source.s_rep
+            strip.repeat = 1 if time_warp else source.s_rep
             strip.action_frame_start = source.sa_beg
             strip.action_frame_end = source.sa_end
             strip.frame_start = source.s_beg
             strip.frame_end = source.s_end
             strip.blend_type = source.s_blend
-            strip.use_auto_blend = source.s_blauto
-            strip.blend_in = 0 if source.s_blauto else source.s_blin
-            strip.blend_out = 0 if source.s_blauto else source.s_blout
+            strip.use_auto_blend = blauto
+            strip.blend_in = 0 if blauto else source.s_blin
+            strip.blend_out = 0 if blauto else source.s_blout
             strip.extrapolation = source.s_xpl
-            strip.use_reverse = False if source.st_warp else source.s_bak
-            strip.use_animated_time = source.st_warp
-            if source.st_warp:
-                i_lerp = int(source.st_curve)
-                i_ease = int(source.st_ease)
-                if source.st_ctrl:
+            strip.use_reverse = False if time_warp else source.s_bak
+            strip.use_animated_time = time_warp
+            if time_warp:
+                w_kicu = int(source.st_curve)
+                w_keas = int(source.st_ease)
+                ctr_con = w_kicu in {6, 9, 10, 11} and w_keas == 2
+                if source.st_ctrl and ctr_con:
                     fpts = 3
                     fvls = (
                         source.s_beg,
                         source.sa_beg,
-                        source.s_beg + source.st_frame - source.sa_beg,
-                        source.st_frame,
+                        source.s_beg + source.st_fra - source.sa_beg,
+                        source.st_fra,
                         source.s_end,
                         source.sa_end,
                     )
-                    klerps = (1, i_lerp, 1)
-                    keases = (0, i_ease, 0)
+                    klerps = (1, w_kicu, 1)
+                    keases = (0, w_keas, 0)
                 else:
                     fpts = 2
                     fvls = (source.s_beg, source.sa_beg, source.s_end, source.sa_end)
-                    klerps = (i_lerp, 1)
-                    keases = (i_ease, 0)
+                    klerps = (w_kicu, 1)
+                    keases = (w_keas, 0)
                 ModFNOP.strip_time_fcurve_reset(strip, fpts, fvls, klerps, keases)
             idx = len(pool.trax) - 1
             pool.trax.move(idx, 0)
