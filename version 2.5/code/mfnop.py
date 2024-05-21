@@ -115,21 +115,17 @@ def anicalc_factors(val):
 
 
 def anicalc_delay(fra, first, last, exp):
-
-    def itexpo_in(t, p):
-        return 1 - (1 - t) ** p
-
     frames = (last - first) + 1
     ifra = 1 if fra == first else fra - first
     dt = ifra / (frames - 1)
-    edt = itexpo_in(dt, exp)
+    edt = 1 - (1 - dt) ** exp
     ratio = edt * frames / ifra
     if exp == 2:
-        return round(ratio, 5)
+        return round(ratio, 2)
     afra = min(ifra, last - fra)
     m = exp - 2
     nframes = ratio * frames + m * afra
-    return round(nframes / frames, 5)
+    return round(nframes / frames, 2)
 
 
 def aniact_fac_list(mirror, cycles, loop):
