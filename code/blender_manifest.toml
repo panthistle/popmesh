@@ -1,0 +1,22 @@
+schema_version = "1.0.0"
+
+id = "PTDBLNPOPM"
+version = "2.5.0"
+name = "PTDBLNPOPM"
+tagline = "path-on-path mesh generator"
+maintainer = "Pan Thistle"
+type = "add-on"
+
+website = "https://panthistle.github.io/pdfs/PMUG25.pdf"
+tags = ["3D View", "User Interface"]
+blender_version_min = "4.2.0"
+
+license = [
+  "SPDX:GPL-3.0-or-later",
+]
+copyright = [
+  "2020-2024 Pan Thistle",
+]
+
+[permissions]
+files = "read/write JSON from/to disk"
