@@ -1,4 +1,4 @@
-### About
+### PopMesh v2.5
 
 Mesh generator/animator add-on for Blender.  Tested on Blender 3.6 LTS and 4.2 LTS.  
 Latest update: 28-Jan-2025
